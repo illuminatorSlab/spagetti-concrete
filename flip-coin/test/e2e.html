@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Flip Coin E2E Test — 1000 Flips</title>
+<style>
+body{font-family:monospace;background:#111;color:#0f0;padding:20px}
+h1{font-size:16px;margin-bottom:10px}
+.progress{color:#ff0;margin:8px 0}
+.stat{margin:4px 0}
+.stat span{color:#0ff}
+.result-bar{width:400px;height:20px;background:#333;border-radius:4px;overflow:hidden;margin:8px 0}
+.result-fill-heads{height:100%;background:#4caf50;float:left;transition:width .1s}
+.result-fill-tails{height:100%;background:#ce2b37;float:right;transition:width .1s}
+.done{color:#0f0;font-weight:bold}
+</style>
+</head>
+<body>
+<h1>E2E: Coin Flip 1000x Simulation</h1>
+<div class="progress" id="progress">Running...</div>
+<div class="result-bar">
+  <div class="result-fill-heads" id="fillHeads" style="width:50%"></div>
+  <div class="result-fill-tails" id="fillTails" style="width:50%"></div>
+</div>
+<div class="stat">Heads: <span id="heads">0</span> | Tails: <span id="tails">0</span></div>
+<div class="stat">Total: <span id="total">0</span></div>
+<div class="stat">Result: <span id="result"></span></div>
+
+<script src="../lib/cannon.min.js"></script>
+<script>
+var TABLE_Y = -1.8;
+var COIN_RADIUS = 0.85;
+var COIN_HEIGHT = 0.12;
+var COIN_HALF_H = COIN_HEIGHT / 2;
+var COIN_SPAWN_H = TABLE_Y + COIN_HALF_H + 4;
+var GRAVITY = -12;
+var ITERATIONS = 1000;
+var SETTLE_THRESH = 0.05;
+var SETTLE_FRAMES = 60;
+
+var headsCount = 0;
+var tailsCount = 0;
+
+var elProgress = document.getElementById('progress');
+var elHeads = document.getElementById('heads');
+var elTails = document.getElementById('tails');
+var elTotal = document.getElementById('total');
+var elResult = document.getElementById('result');
+var elFillHeads = document.getElementById('fillHeads');
+var elFillTails = document.getElementById('fillTails');
+
+function runSingleFlip() {
+  var world = new CANNON.World();
+  world.gravity.set(0, GRAVITY, 0);
+  world.solver.iterations = 20;
+
+  var coinMat = new CANNON.Material('coin');
+  var tableMat = new CANNON.Material('table');
+  world.addContactMaterial(new CANNON.ContactMaterial(coinMat, tableMat, {
+    friction: 0.35,
+    restitution: 0.4,
+  }));
+
+  // Ground plane
+  var groundBody = new CANNON.Body({ mass: 0, material: tableMat });
+  groundBody.addShape(new CANNON.Plane());
+  groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+  groundBody.position.set(0, TABLE_Y, 0);
+  world.addBody(groundBody);
+
+  // Coin body
+  var coinShape = new CANNON.Box(new CANNON.Vec3(COIN_RADIUS, COIN_HALF_H, COIN_RADIUS));
+  var body = new CANNON.Body({ mass: 0.005, material: coinMat });
+  body.addShape(coinShape);
+  body.position.set(0, COIN_SPAWN_H, 0);
+  body.quaternion.setFromEuler(Math.PI / 2, 0, 0);  // stand on edge
+  body.angularVelocity.set(
+    (Math.random() - 0.5) * 50,
+    (Math.random() - 0.5) * 50,
+    (Math.random() - 0.5) * 50
+  );
+  body.allowSleep = true;
+  body.sleepSpeedLimit = 0.05;
+  body.sleepTimeLimit = 0.5;
+  world.addBody(body);
+
+  // Step until settled
+  var settleFrames = 0;
+  var dt = 1 / 60;
+  var maxSteps = 2000;
+  for (var i = 0; i < maxSteps; i++) {
+    world.step(dt, dt, 3);
+
+    var v = body.velocity;
+    var av = body.angularVelocity;
+    var speed = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+    var aSpeed = Math.sqrt(av.x * av.x + av.y * av.y + av.z * av.z);
+
+    if (speed < SETTLE_THRESH && aSpeed < SETTLE_THRESH) {
+      settleFrames++;
+      if (settleFrames >= SETTLE_FRAMES) {
+        break;
+      }
+    } else {
+      settleFrames = 0;
+    }
+  }
+
+  // Determine result
+  var localUp = new CANNON.Vec3(0, 1, 0);
+  body.quaternion.vmult(localUp, localUp);
+  var isHeads = localUp.y > 0;
+
+  return isHeads;
+}
+
+function updateDisplay() {
+  var total = headsCount + tailsCount;
+  var pctHeads = total > 0 ? ((headsCount / total) * 100).toFixed(1) : 50;
+  var pctTails = 100 - parseFloat(pctHeads);
+
+  elHeads.textContent = headsCount;
+  elTails.textContent = tailsCount;
+  elTotal.textContent = total;
+  elFillHeads.style.width = pctHeads + '%';
+  elFillTails.style.width = pctTails + '%';
+  elResult.textContent = 'Heads: ' + pctHeads + '%  /  Tails: ' + pctTails + '%';
+}
+
+function runAll() {
+  var i = 0;
+  function step() {
+    var batch = 5;
+    for (var b = 0; b < batch && i < ITERATIONS; b++, i++) {
+      if (runSingleFlip()) {
+        headsCount++;
+      } else {
+        tailsCount++;
+      }
+    }
+
+    updateDisplay();
+    elProgress.textContent = 'Running... ' + i + ' / ' + ITERATIONS;
+
+    if (i < ITERATIONS) {
+      setTimeout(step, 20);
+    } else {
+      elProgress.textContent = 'DONE — ' + ITERATIONS + ' flips completed.';
+    }
+  }
+  step();
+}
+
+runAll();
+</script>
+</body>
+</html>

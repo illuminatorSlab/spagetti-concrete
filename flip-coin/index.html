@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>抛硬币卜卦</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:#1c1c1e;color:#e4e4e6;min-height:100vh;min-height:100dvh;
+  display:flex;justify-content:center;align-items:center;
+  overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;
+}
+.app{width:100%;max-width:480px;height:100vh;height:100dvh;display:flex;flex-direction:column;position:relative}
+
+.header{text-align:center;padding:14px 16px 0;flex-shrink:0}
+.header h1{font-size:18px;font-weight:700;color:#c0a030}
+.header .sub{font-size:11px;color:#555;margin-top:2px}
+
+.tabs{display:flex;gap:0;padding:12px 16px 0;flex-shrink:0}
+.tab{
+  flex:1;padding:10px 0;text-align:center;font-size:13px;font-weight:600;
+  color:#666;background:#252528;border:1.5px solid #333;cursor:pointer;
+  transition:all .2s
+}
+.tab:first-child{border-radius:10px 0 0 10px}
+.tab:last-child{border-radius:0 10px 10px 0}
+.tab.active{color:#1c1c1e;background:#c0a030;border-color:#c0a030;position:relative;z-index:1}
+.tab:not(.active):hover{color:#999}
+
+.canvas-wrap{flex:1;position:relative;margin:0 12px;border-radius:14px;overflow:hidden;background:#0a0a0c}
+.canvas-wrap canvas{display:block;width:100%!important;height:100%!important}
+
+.overlay{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:16px;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:10px
+}
+.overlay>*{pointer-events:auto}
+
+.result-bar{
+  background:rgba(20,22,26,.45);border:1px solid rgba(255,255,255,.08);border-radius:12px;
+  padding:10px 16px;font-size:14px;text-align:center;min-width:160px;transition:background .3s
+}
+.result-bar .coins{font-size:22px;letter-spacing:6px;margin-bottom:2px}
+.result-bar .label{font-size:12px;color:#888}
+
+.hexagram-display{display:none;width:100%;max-width:360px}
+.hexagram-display.show{display:block;max-height:60vh;overflow-y:auto}
+.hexagram-lines{
+  display:flex;flex-direction:column-reverse;gap:6px;
+  padding:12px;background:rgba(20,22,26,.45);border:1px solid rgba(255,255,255,.08);border-radius:12px;
+  transition:background .3s
+}
+.hexagram-lines.complete{
+  background:rgba(30,30,34,.92);border-color:#333
+}
+.hexagram-line{display:flex;align-items:center;gap:10px;opacity:.25}
+.hexagram-line.filled{opacity:1}
+.hexagram-line .idx{font-size:11px;color:#555;width:28px;text-align:right;flex-shrink:0}
+.hexagram-line .bar{
+  flex:1;height:14px;border-radius:7px;background:#c0a030;position:relative
+}
+.hexagram-line.yin .bar{
+  background:transparent;display:flex;gap:6px;justify-content:center
+}
+.hexagram-line.yin .bar::before,.hexagram-line.yin .bar::after{
+  content:'';width:40%;height:100%;background:#c0a030;border-radius:7px
+}
+.hexagram-line.changing .idx{color:#ce2b37;font-weight:700}
+.hexagram-line.changing .bar,
+.hexagram-line.changing.yin .bar::before,
+.hexagram-line.changing.yin .bar::after{background:#ce2b37}
+.hexagram-line .dot{
+  width:8px;height:8px;border-radius:50%;background:#ce2b37;flex-shrink:0;
+  display:none
+}
+.hexagram-line.changing .dot{display:block}
+
+.hexagram-result{
+  margin-top:10px;text-align:center;font-size:13px;color:#c0a030;
+  background:rgba(20,22,26,.45);border:1px solid rgba(255,255,255,.08);border-radius:12px;
+  padding:10px;transition:background .3s
+}
+.hexagram-result.complete{
+  background:rgba(30,30,34,.92);border-color:#333
+}
+.hexagram-result .gua-name{font-size:24px;font-weight:700;margin-bottom:2px}
+.hexagram-result .gua-symbol{font-size:48px;margin-bottom:4px}
+.hexagram-result .gua-detail{font-size:12px;color:#888;line-height:1.5;margin-top:4px}
+.hexagram-result .gua-detail b{color:#c0a030}
+.hexagram-result .changed-name{font-size:16px;color:#ce2b37;margin-top:6px}
+
+.controls{
+  display:flex;justify-content:center;gap:12px;
+  padding:12px 16px;flex-shrink:0
+}
+.btn{
+  padding:12px 28px;border-radius:24px;font-size:14px;font-weight:600;
+  cursor:pointer;transition:all .2s;border:none;
+  background:#c0a030;color:#1c1c1e;
+  box-shadow:0 4px 15px rgba(192,160,48,.3)
+}
+.btn:active{transform:scale(.94)}
+.btn:disabled{background:#333;color:#555;box-shadow:none;cursor:default}
+.btn-secondary{background:#252528;color:#c0a030;border:1.5px solid #c0a030;box-shadow:none}
+.btn-secondary:disabled{color:#555;border-color:#333}
+
+.btn-copy{background:transparent;color:#c0a030;border:1px solid #c0a030;padding:6px 16px;border-radius:16px;font-size:12px;cursor:pointer;transition:all .2s}
+.btn-copy:hover{background:rgba(192,160,48,.15)}
+
+.gyro-badge{
+  position:absolute;top:10px;right:10px;width:10px;height:10px;border-radius:50%;
+  background:#444;transition:background .3s;z-index:1
+}
+.gyro-badge.active{background:#4caf50}
+.gyro-badge.denied{background:#ce2b37}
+
+.permission-prompt{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(10,10,12,.9);z-index:2;border-radius:14px
+}
+.permission-prompt.hidden{display:none}
+.hidden{display:none}
+.permission-prompt .inner{text-align:center;padding:20px}
+.permission-prompt .inner .icon{font-size:44px;margin-bottom:12px}
+.permission-prompt .inner p{font-size:13px;color:#888;line-height:1.6;margin-bottom:16px}
+
+.progress-text{
+  font-size:12px;color:#555;text-align:center;margin-top:4px
+}
+
+.debug-panel{
+  background:rgba(0,0,0,.85);border:1px solid rgba(255,255,255,.15);border-radius:8px;
+  padding:6px 10px;font-size:10px;font-family:monospace;color:#0f0;line-height:1.5;
+  position:absolute;top:8px;left:8px;z-index:3;max-width:200px
+}
+.debug-panel b{color:#ff0}
+.debug-panel .warn{color:#f44}
+.debug-panel .ok{color:#0f0}
+
+.footer{text-align:center;padding:8px 16px;flex-shrink:0}
+.footer a{font-size:11px;color:#444;text-decoration:none}
+.footer a:hover{color:#666}
+
+@media(max-width:360px){
+  .tabs{padding:10px 12px 0}
+  .tab{font-size:12px;padding:8px 0}
+  .header h1{font-size:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <h1>🪙 抛硬币卜卦</h1>
+    <div class="sub">摇动手机抛掷硬币</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-mode="hexagram">六爻卜卦</button>
+    <button class="tab" data-mode="triple">三枚</button>
+    <button class="tab" data-mode="single">单枚</button>
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <div class="gyro-badge" id="gyroBadge" title="陀螺仪状态"></div>
+    <div class="debug-panel" id="debugPanel">
+      gyro:<span class="warn" id="dbGyro">---</span>
+      mag:<b id="dbMag">--</b>
+      rest:<b id="dbRest">--</b>
+      r:<b id="dbRatio">--</b>
+      ev:<b id="dbEv">0</b>
+    </div>
+    <div class="permission-prompt hidden" id="permPrompt">
+      <div class="inner">
+        <div class="icon" id="permIcon">📱</div>
+        <p id="permText">需要陀螺仪权限来检测<br>手机的抛掷动作</p>
+        <button class="btn" id="permBtn">启用陀螺仪</button>
+        <button class="btn btn-secondary hidden" id="permRetryBtn">重试</button>
+      </div>
+    </div>
+    <div class="overlay" id="overlay">
+      <div class="result-bar" id="resultBar">
+        <div class="coins" id="resultCoins"></div>
+        <div class="label" id="resultLabel"></div>
+      </div>
+      <div class="hexagram-display" id="hexagramDisplay">
+        <div class="hexagram-lines" id="hexagramLines"></div>
+        <div class="hexagram-result" id="hexagramResult"></div>
+      </div>
+      <div class="progress-text" id="progressText"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="flipBtn">🖐 抛掷</button>
+    <button class="btn btn-secondary" id="resetBtn" style="display:none">重新开始</button>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← 返回首页</a>
+  </div>
+
+</div>
+
+<script src="lib/three.min.js"></script>
+<script src="lib/cannon.min.js"></script>
+<script>
+// Global error trap — show ANY error on the debug panel
+window.onerror = function(msg, url, line) {
+  var db = document.getElementById('dbGyro');
+  if (db) { db.textContent = 'ERR:' + line; db.className = 'warn'; }
+};
+// Quick sanity check
+(function() {
+  var db = document.getElementById('dbGyro');
+  if (db) { db.textContent = 'GO'; db.className = 'ok'; }
+})();
+// ========== HEXAGRAM DATA ==========
+var HEXAGRAM_MAP = [
+  { n:"坤为地",     s:"䷁", p:"Kūn",        u:"坤", uS:"☷", l:"坤", lS:"☷",
+    g:"元亨，利牝马之贞。君子有攸往，先迷后得主，利西南得朋，东北丧朋。安贞吉。",
+    x:"地势坤，君子以厚德载物。" }, // 0
+  { n:"地雷复",     s:"䷗", p:"Fù",          u:"坤", uS:"☷", l:"震", lS:"☳",
+    g:"亨。出入无疾，朋来无咎。反复其道，七日来复，利有攸往。",
+    x:"雷在地中，复。先王以至日闭关，商旅不行，后不省方。" }, // 1
+  { n:"地水师",     s:"䷆", p:"Shī",         u:"坤", uS:"☷", l:"坎", lS:"☵",
+    g:"贞，丈人吉，无咎。",
+    x:"地中有水，师。君子以容民畜众。" }, // 2
+  { n:"地泽临",     s:"䷒", p:"Lín",         u:"坤", uS:"☷", l:"兑", lS:"☱",
+    g:"元亨利贞。至于八月有凶。",
+    x:"泽上有地，临。君子以教思无穷，容保民无疆。" }, // 3
+  { n:"地山谦",     s:"䷎", p:"Qiān",        u:"坤", uS:"☷", l:"艮", lS:"☶",
+    g:"亨，君子有终。",
+    x:"地中有山，谦。君子以裒多益寡，称物平施。" }, // 4
+  { n:"地火明夷",   s:"䷣", p:"Míng Yí",     u:"坤", uS:"☷", l:"离", lS:"☲",
+    g:"利艰贞。",
+    x:"明入地中，明夷。君子以莅众，用晦而明。" }, // 5
+  { n:"地风升",     s:"䷭", p:"Shēng",       u:"坤", uS:"☷", l:"巽", lS:"☴",
+    g:"元亨，用见大人，勿恤，南征吉。",
+    x:"地中生木，升。君子以顺德，积小以高大。" }, // 6
+  { n:"地天泰",     s:"䷊", p:"Tài",         u:"坤", uS:"☷", l:"乾", lS:"☰",
+    g:"小往大来，吉亨。",
+    x:"天地交，泰。后以财成天地之道，辅相天地之宜，以左右民。" }, // 7
+  { n:"雷地豫",     s:"䷏", p:"Yù",          u:"震", uS:"☳", l:"坤", lS:"☷",
+    g:"利建侯行师。",
+    x:"雷出地奋，豫。先王以作乐崇德，殷荐之上帝，以配祖考。" }, // 8
+  { n:"震为雷",     s:"䷲", p:"Zhèn",        u:"震", uS:"☳", l:"震", lS:"☳",
+    g:"亨。震来虩虩，笑言哑哑。震惊百里，不丧匕鬯。",
+    x:"洊雷，震。君子以恐惧修省。" }, // 9
+  { n:"雷水解",     s:"䷧", p:"Xiè",         u:"震", uS:"☳", l:"坎", lS:"☵",
+    g:"利西南。无所往，其来复吉。有攸往，夙吉。",
+    x:"雷雨作，解。君子以赦过宥罪。" }, // 10
+  { n:"雷泽归妹",   s:"䷵", p:"Guī Mèi",     u:"震", uS:"☳", l:"兑", lS:"☱",
+    g:"征凶，无攸利。",
+    x:"泽上有雷，归妹。君子以永终知敝。" }, // 11
+  { n:"雷山小过",   s:"䷽", p:"Xiǎo Guò",    u:"震", uS:"☳", l:"艮", lS:"☶",
+    g:"亨，利贞。可小事，不可大事。飞鸟遗之音，不宜上，宜下，大吉。",
+    x:"山上有雷，小过。君子以行过乎恭，丧过乎哀，用过乎俭。" }, // 12
+  { n:"雷火丰",     s:"䷶", p:"Fēng",        u:"震", uS:"☳", l:"离", lS:"☲",
+    g:"亨，王假之。勿忧，宜日中。",
+    x:"雷电皆至，丰。君子以折狱致刑。" }, // 13
+  { n:"雷风恒",     s:"䷟", p:"Héng",        u:"震", uS:"☳", l:"巽", lS:"☴",
+    g:"亨，无咎，利贞。利有攸往。",
+    x:"雷风，恒。君子以立不易方。" }, // 14
+  { n:"雷天大壮",   s:"䷡", p:"Dà Zhuàng",   u:"震", uS:"☳", l:"乾", lS:"☰",
+    g:"利贞。",
+    x:"雷在天上，大壮。君子以非礼弗履。" }, // 15
+  { n:"水地比",     s:"䷇", p:"Bǐ",          u:"坎", uS:"☵", l:"坤", lS:"☷",
+    g:"吉。原筮，元永贞，无咎。不宁方来，后夫凶。",
+    x:"地上有水，比。先王以建万国，亲诸侯。" }, // 16
+  { n:"水雷屯",     s:"䷂", p:"Zhūn",        u:"坎", uS:"☵", l:"震", lS:"☳",
+    g:"元亨利贞。勿用有攸往，利建侯。",
+    x:"云雷，屯。君子以经纶。" }, // 17
+  { n:"坎为水",     s:"䷜", p:"Kǎn",         u:"坎", uS:"☵", l:"坎", lS:"☵",
+    g:"习坎，有孚，维心亨，行有尚。",
+    x:"水洊至，习坎。君子以常德行，习教事。" }, // 18
+  { n:"水泽节",     s:"䷻", p:"Jié",         u:"坎", uS:"☵", l:"兑", lS:"☱",
+    g:"亨。苦节不可贞。",
+    x:"泽上有水，节。君子以制数度，议德行。" }, // 19
+  { n:"水山蹇",     s:"䷦", p:"Jiǎn",        u:"坎", uS:"☵", l:"艮", lS:"☶",
+    g:"利西南，不利东北。利见大人，贞吉。",
+    x:"山上有水，蹇。君子以反身修德。" }, // 20
+  { n:"水火既济",   s:"䷾", p:"Jì Jì",       u:"坎", uS:"☵", l:"离", lS:"☲",
+    g:"亨小，利贞。初吉终乱。",
+    x:"水在火上，既济。君子以思患而豫防之。" }, // 21
+  { n:"水风井",     s:"䷯", p:"Jǐng",        u:"坎", uS:"☵", l:"巽", lS:"☴",
+    g:"改邑不改井，无丧无得，往来井井。汔至亦未繘井，羸其瓶，凶。",
+    x:"木上有水，井。君子以劳民劝相。" }, // 22
+  { n:"水天需",     s:"䷄", p:"Xū",          u:"坎", uS:"☵", l:"乾", lS:"☰",
+    g:"有孚，光亨，贞吉。利涉大川。",
+    x:"云上于天，需。君子以饮食宴乐。" }, // 23
+  { n:"泽地萃",     s:"䷬", p:"Cuì",         u:"兑", uS:"☱", l:"坤", lS:"☷",
+    g:"亨。王假有庙。利见大人，亨，利贞。用大牲吉，利有攸往。",
+    x:"泽上于地，萃。君子以除戎器，戒不虞。" }, // 24
+  { n:"泽雷随",     s:"䷐", p:"Suí",         u:"兑", uS:"☱", l:"震", lS:"☳",
+    g:"元亨利贞，无咎。",
+    x:"泽中有雷，随。君子以向晦入宴息。" }, // 25
+  { n:"泽水困",     s:"䷮", p:"Kùn",         u:"兑", uS:"☱", l:"坎", lS:"☵",
+    g:"亨，贞，大人吉，无咎。有言不信。",
+    x:"泽无水，困。君子以致命遂志。" }, // 26
+  { n:"兑为泽",     s:"䷹", p:"Duì",         u:"兑", uS:"☱", l:"兑", lS:"☱",
+    g:"亨，利贞。",
+    x:"丽泽，兑。君子以朋友讲习。" }, // 27
+  { n:"泽山咸",     s:"䷞", p:"Xián",        u:"兑", uS:"☱", l:"艮", lS:"☶",
+    g:"亨，利贞。取女吉。",
+    x:"山上有泽，咸。君子以虚受人。" }, // 28
+  { n:"泽火革",     s:"䷰", p:"Gé",          u:"兑", uS:"☱", l:"离", lS:"☲",
+    g:"己日乃孚，元亨利贞，悔亡。",
+    x:"泽中有火，革。君子以治历明时。" }, // 29
+  { n:"泽风大过",   s:"䷛", p:"Dà Guò",      u:"兑", uS:"☱", l:"巽", lS:"☴",
+    g:"栋桡，利有攸往，亨。",
+    x:"泽灭木，大过。君子以独立不惧，遁世无闷。" }, // 30
+  { n:"泽天夬",     s:"䷪", p:"Guài",        u:"兑", uS:"☱", l:"乾", lS:"☰",
+    g:"扬于王庭，孚号有厉。告自邑，不利即戎。利有攸往。",
+    x:"泽上于天，夬。君子以施禄及下，居德则忌。" }, // 31
+  { n:"山地剥",     s:"䷖", p:"Bō",          u:"艮", uS:"☶", l:"坤", lS:"☷",
+    g:"不利有攸往。",
+    x:"山附于地，剥。上以厚下安宅。" }, // 32
+  { n:"山雷颐",     s:"䷚", p:"Yí",          u:"艮", uS:"☶", l:"震", lS:"☳",
+    g:"贞吉。观颐，自求口实。",
+    x:"山下有雷，颐。君子以慎言语，节饮食。" }, // 33
+  { n:"山水蒙",     s:"䷃", p:"Méng",        u:"艮", uS:"☶", l:"坎", lS:"☵",
+    g:"亨。匪我求童蒙，童蒙求我。初筮告，再三渎，渎则不告。利贞。",
+    x:"山下出泉，蒙。君子以果行育德。" }, // 34
+  { n:"山泽损",     s:"䷨", p:"Sǔn",         u:"艮", uS:"☶", l:"兑", lS:"☱",
+    g:"有孚，元吉，无咎，可贞，利有攸往。曷之用？二簋可用享。",
+    x:"山下有泽，损。君子以惩忿窒欲。" }, // 35
+  { n:"艮为山",     s:"䷳", p:"Gèn",         u:"艮", uS:"☶", l:"艮", lS:"☶",
+    g:"艮其背，不获其身。行其庭，不见其人，无咎。",
+    x:"兼山，艮。君子以思不出其位。" }, // 36
+  { n:"山火贲",     s:"䷕", p:"Bì",          u:"艮", uS:"☶", l:"离", lS:"☲",
+    g:"亨。小利有攸往。",
+    x:"山下有火，贲。君子以明庶政，无敢折狱。" }, // 37
+  { n:"山风蛊",     s:"䷑", p:"Gǔ",          u:"艮", uS:"☶", l:"巽", lS:"☴",
+    g:"元亨，利涉大川。先甲三日，后甲三日。",
+    x:"山下有风，蛊。君子以振民育德。" }, // 38
+  { n:"山天大畜",   s:"䷙", p:"Dà Chù",      u:"艮", uS:"☶", l:"乾", lS:"☰",
+    g:"利贞。不家食吉，利涉大川。",
+    x:"天在山中，大畜。君子以多识前言往行，以畜其德。" }, // 39
+  { n:"火地晋",     s:"䷢", p:"Jìn",         u:"离", uS:"☲", l:"坤", lS:"☷",
+    g:"康侯用锡马蕃庶，昼日三接。",
+    x:"明出地上，晋。君子以自昭明德。" }, // 40
+  { n:"火雷噬嗑",   s:"䷔", p:"Shì Hé",      u:"离", uS:"☲", l:"震", lS:"☳",
+    g:"亨。利用狱。",
+    x:"雷电，噬嗑。先王以明罚敕法。" }, // 41
+  { n:"火水未济",   s:"䷿", p:"Wèi Jì",      u:"离", uS:"☲", l:"坎", lS:"☵",
+    g:"亨，小狐汔济，濡其尾，无攸利。",
+    x:"火在水上，未济。君子以慎辨物居方。" }, // 42
+  { n:"火泽睽",     s:"䷥", p:"Kuí",         u:"离", uS:"☲", l:"兑", lS:"☱",
+    g:"小事吉。",
+    x:"上火下泽，睽。君子以同而异。" }, // 43
+  { n:"火山旅",     s:"䷷", p:"Lǚ",          u:"离", uS:"☲", l:"艮", lS:"☶",
+    g:"小亨，旅贞吉。",
+    x:"山上有火，旅。君子以明慎用刑，而不留狱。" }, // 44
+  { n:"离为火",     s:"䷝", p:"Lí",          u:"离", uS:"☲", l:"离", lS:"☲",
+    g:"利贞，亨。畜牝牛吉。",
+    x:"明两作，离。大人以继明照于四方。" }, // 45
+  { n:"火风鼎",     s:"䷱", p:"Dǐng",        u:"离", uS:"☲", l:"巽", lS:"☴",
+    g:"元吉，亨。",
+    x:"木上有火，鼎。君子以正位凝命。" }, // 46
+  { n:"火天大有",   s:"䷍", p:"Dà Yǒu",      u:"离", uS:"☲", l:"乾", lS:"☰",
+    g:"元亨。",
+    x:"火在天上，大有。君子以遏恶扬善，顺天休命。" }, // 47
+  { n:"风地观",     s:"䷓", p:"Guān",        u:"巽", uS:"☴", l:"坤", lS:"☷",
+    g:"盥而不荐，有孚颙若。",
+    x:"风行地上，观。先王以省方，观民设教。" }, // 48
+  { n:"风雷益",     s:"䷩", p:"Yì",          u:"巽", uS:"☴", l:"震", lS:"☳",
+    g:"利有攸往，利涉大川。",
+    x:"风雷，益。君子以见善则迁，有过则改。" }, // 49
+  { n:"风水涣",     s:"䷺", p:"Huàn",        u:"巽", uS:"☴", l:"坎", lS:"☵",
+    g:"亨。王假有庙，利涉大川，利贞。",
+    x:"风行水上，涣。先王以享于帝，立庙。" }, // 50
+  { n:"风泽中孚",   s:"䷼", p:"Zhōng Fú",    u:"巽", uS:"☴", l:"兑", lS:"☱",
+    g:"豚鱼吉，利涉大川，利贞。",
+    x:"泽上有风，中孚。君子以议狱缓死。" }, // 51
+  { n:"风山渐",     s:"䷴", p:"Jiàn",        u:"巽", uS:"☴", l:"艮", lS:"☶",
+    g:"女归吉，利贞。",
+    x:"山上有木，渐。君子以居贤德善俗。" }, // 52
+  { n:"风火家人",   s:"䷤", p:"Jiā Rén",     u:"巽", uS:"☴", l:"离", lS:"☲",
+    g:"利女贞。",
+    x:"风自火出，家人。君子以言有物，而行有恒。" }, // 53
+  { n:"巽为风",     s:"䷸", p:"Xùn",         u:"巽", uS:"☴", l:"巽", lS:"☴",
+    g:"小亨，利有攸往，利见大人。",
+    x:"随风，巽。君子以申命行事。" }, // 54
+  { n:"风天小畜",   s:"䷈", p:"Xiǎo Chù",    u:"巽", uS:"☴", l:"乾", lS:"☰",
+    g:"亨。密云不雨，自我西郊。",
+    x:"风行天上，小畜。君子以懿文德。" }, // 55
+  { n:"天地否",     s:"䷋", p:"Pǐ",          u:"乾", uS:"☰", l:"坤", lS:"☷",
+    g:"否之匪人，不利君子贞。大往小来。",
+    x:"天地不交，否。君子以俭德辟难，不可荣以禄。" }, // 56
+  { n:"天雷无妄",   s:"䷘", p:"Wú Wàng",     u:"乾", uS:"☰", l:"震", lS:"☳",
+    g:"元亨利贞。其匪正有眚，不利有攸往。",
+    x:"天下雷行，物与无妄。先王以茂对时，育万物。" }, // 57
+  { n:"天水讼",     s:"䷅", p:"Sòng",        u:"乾", uS:"☰", l:"坎", lS:"☵",
+    g:"有孚，窒惕，中吉，终凶。利见大人，不利涉大川。",
+    x:"天与水违行，讼。君子以作事谋始。" }, // 58
+  { n:"天泽履",     s:"䷉", p:"Lǚ",          u:"乾", uS:"☰", l:"兑", lS:"☱",
+    g:"履虎尾，不咥人，亨。",
+    x:"上天下泽，履。君子以辨上下，定民志。" }, // 59
+  { n:"天山遁",     s:"䷠", p:"Dùn",         u:"乾", uS:"☰", l:"艮", lS:"☶",
+    g:"亨。小利贞。",
+    x:"天下有山，遁。君子以远小人，不恶而严。" }, // 60
+  { n:"天火同人",   s:"䷌", p:"Tóng Rén",    u:"乾", uS:"☰", l:"离", lS:"☲",
+    g:"同人于野，亨。利涉大川，利君子贞。",
+    x:"天与火，同人。君子以类族辨物。" }, // 61
+  { n:"天风姤",     s:"䷫", p:"Gòu",         u:"乾", uS:"☰", l:"巽", lS:"☴",
+    g:"女壮，勿用取女。",
+    x:"天下有风，姤。后以施命诰四方。" }, // 62
+  { n:"乾为天",     s:"䷀", p:"Qián",        u:"乾", uS:"☰", l:"乾", lS:"☰",
+    g:"元亨利贞。",
+    x:"天行健，君子以自强不息。" }, // 63
+];
+
+// ========== DOM REFS ==========
+var elTabSingle = document.querySelector('[data-mode="single"]');
+var elTabTriple = document.querySelector('[data-mode="triple"]');
+var elTabHexagram = document.querySelector('[data-mode="hexagram"]');
+var elCanvasWrap = document.getElementById('canvasWrap');
+var elFlipBtn = document.getElementById('flipBtn');
+var elResetBtn = document.getElementById('resetBtn');
+var elResultCoins = document.getElementById('resultCoins');
+var elResultLabel = document.getElementById('resultLabel');
+var elResultBar = document.getElementById('resultBar');
+var elHexagramDisplay = document.getElementById('hexagramDisplay');
+var elHexagramLines = document.getElementById('hexagramLines');
+var elHexagramResult = document.getElementById('hexagramResult');
+var elProgressText = document.getElementById('progressText');
+var elGyroBadge = document.getElementById('gyroBadge');
+var elPermPrompt = document.getElementById('permPrompt');
+var elPermBtn = document.getElementById('permBtn');
+var elOverlay = document.getElementById('overlay');
+var elPermRetryBtn = document.getElementById('permRetryBtn');
+var elPermIcon = document.getElementById('permIcon');
+var elPermText = document.getElementById('permText');
+
+var debugEvCount = 0;
+var elDbGyro = document.getElementById('dbGyro');
+var elDbMag = document.getElementById('dbMag');
+var elDbRest = document.getElementById('dbRest');
+var elDbRatio = document.getElementById('dbRatio');
+var elDbEv = document.getElementById('dbEv');
+
+// ========== APP STATE ==========
+var mode = 'single';
+var gyroActive = false;
+var gyroPermission = null;
+var cooldown = false;
+var cooldownTimer = null;
+var isDesktop = false;
+
+var hexagramLines = [];
+var hexagramRound = 0;
+var settledHandled = true;
+
+// Pre-initialize gyro BEFORE Three.js (so if Three.js fails, gyro debug still works)
+elDbGyro.textContent = 'init';
+elDbGyro.className = 'warn';
+requestGyroPermission();
+
+// ========== THREE.JS INIT ==========
+var wrapRect = elCanvasWrap.getBoundingClientRect();
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0c);
+
+var camera = new THREE.PerspectiveCamera(45, wrapRect.width / wrapRect.height, 0.1, 500);
+camera.position.set(0, 28, 18);
+camera.lookAt(0, -2, 0);
+
+var camTargetLook = new THREE.Vector3(0, -2, 0);
+var camTargetPos = new THREE.Vector3(0, 28, 18);
+
+var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(wrapRect.width, wrapRect.height, false);
+elCanvasWrap.appendChild(renderer.domElement);
+
+var ambientLight = new THREE.AmbientLight(0x444444, 1.2);
+scene.add(ambientLight);
+var dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+dirLight.position.set(2, 5, 4);
+scene.add(dirLight);
+var dirLight2 = new THREE.DirectionalLight(0xffdd88, 0.8);
+dirLight2.position.set(-2, 1, -2);
+scene.add(dirLight2);
+
+// Arena / table
+var TABLE_SIZE = 44;
+var TABLE_Y = -1.8;
+var WALL_HEIGHT = 6;
+var PHYS_WALL_H = 8;  // physics walls taller to prevent coins flying out
+
+function buildArena() {
+  // Generate a felt-like texture with color variation
+  var texCanvas = document.createElement('canvas');
+  texCanvas.width = 512; texCanvas.height = 512;
+  var ctx = texCanvas.getContext('2d');
+  // Base dark green
+  ctx.fillStyle = '#1a3a1a'; ctx.fillRect(0, 0, 512, 512);
+  // Subtle noise/grain
+  for (var i = 0; i < 8000; i++) {
+    var x = Math.random() * 512, y = Math.random() * 512;
+    var shade = 24 + Math.floor(Math.random() * 20);
+    ctx.fillStyle = 'rgb(' + shade + ',' + (shade + 30) + ',' + shade + ')';
+    ctx.fillRect(x, y, 2 + Math.random() * 3, 2 + Math.random() * 3);
+  }
+  // Subtle directional brush strokes
+  ctx.strokeStyle = 'rgba(255,255,255,0.015)';
+  ctx.lineWidth = 1;
+  for (var j = 0; j < 60; j++) {
+    ctx.beginPath();
+    var sx = Math.random() * 512, sy = Math.random() * 512;
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(sx + (Math.random() - 0.5) * 200, sy + (Math.random() - 0.5) * 200);
+    ctx.stroke();
+  }
+  var feltTex = new THREE.CanvasTexture(texCanvas);
+  feltTex.wrapS = THREE.RepeatWrapping;
+  feltTex.wrapT = THREE.RepeatWrapping;
+  feltTex.repeat.set(4, 4);
+
+  var floorGeo = new THREE.PlaneGeometry(TABLE_SIZE * 2, TABLE_SIZE * 2);
+  var floorMat = new THREE.MeshStandardMaterial({ map: feltTex, roughness: 0.85, metalness: 0.02, color: 0xccddcc });
+  var floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.position.y = TABLE_Y;
+  floor.rotation.x = -Math.PI / 2;
+  scene.add(floor);
+
+  // Table edge/rail — wooden base + glass panels
+  var railMat = new THREE.MeshStandardMaterial({ color: 0x5c3a1e, roughness: 0.5, metalness: 0.15 });
+  var glassMat = new THREE.MeshStandardMaterial({ color: 0xaaccdd, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.25 });
+  var halfX = TABLE_SIZE, halfZ = TABLE_SIZE;
+
+  function addRail(x, z, w, d) {
+    var geoRail = new THREE.BoxGeometry(w, 0.3, d);
+    var rail = new THREE.Mesh(geoRail, railMat);
+    rail.position.set(x, TABLE_Y + 0.15, z);
+    scene.add(rail);
+    var geoGlass = new THREE.BoxGeometry(w, WALL_HEIGHT, d);
+    var glass = new THREE.Mesh(geoGlass, glassMat);
+    glass.position.set(x, TABLE_Y + 0.3 + WALL_HEIGHT / 2, z);
+    scene.add(glass);
+  }
+
+  addRail( halfX + 0.05, 0, 0.2, halfZ * 2 + 0.4);
+  addRail(-halfX - 0.05, 0, 0.2, halfZ * 2 + 0.4);
+  addRail(0,  halfZ + 0.05, halfX * 2 + 0.4, 0.2);
+  addRail(0, -halfZ - 0.05, halfX * 2 + 0.4, 0.2);
+}
+
+buildArena();
+
+// ========== CANNON.JS PHYSICS WORLD ==========
+var physWorld = new CANNON.World();
+physWorld.gravity.set(0, -12, 0);
+physWorld.solver.iterations = 20;
+physWorld.solver.tolerance = 0.001;
+physWorld.defaultContactMaterial.contactEquationStiffness = 1e8;
+physWorld.defaultContactMaterial.contactEquationRelaxation = 3;
+
+var coinMaterial = new CANNON.Material('coin');
+var tableMaterial = new CANNON.Material('table');
+physWorld.addContactMaterial(new CANNON.ContactMaterial(coinMaterial, tableMaterial, {
+  friction: 0.35,
+  restitution: 0.4,
+}));
+
+// Ground plane (static)
+var groundShape = new CANNON.Plane();
+var groundBody = new CANNON.Body({ mass: 0, material: tableMaterial });
+groundBody.addShape(groundShape);
+groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+groundBody.position.set(0, TABLE_Y, 0);
+physWorld.addBody(groundBody);
+
+// Table walls (static) — tall to contain coins
+var wallH = PHYS_WALL_H;
+function addPhysWall(x, z, w, h, d) {
+  var shape = new CANNON.Box(new CANNON.Vec3(w / 2, h / 2, d / 2));
+  var body = new CANNON.Body({ mass: 0, material: tableMaterial });
+  body.addShape(shape);
+  body.position.set(x, TABLE_Y + h / 2, z);
+  physWorld.addBody(body);
+}
+addPhysWall( TABLE_SIZE + 0.1, 0, 0.2, wallH, TABLE_SIZE * 2 + 0.2);
+addPhysWall(-TABLE_SIZE - 0.1, 0, 0.2, wallH, TABLE_SIZE * 2 + 0.2);
+addPhysWall(0,  TABLE_SIZE + 0.1, TABLE_SIZE * 2 + 0.2, wallH, 0.2);
+addPhysWall(0, -TABLE_SIZE - 0.1, TABLE_SIZE * 2 + 0.2, wallH, 0.2);
+
+// ========== COIN TEXTURES ==========
+function createCoinFace(canvas, bgColor, rimColor, charText, charColor) {
+  var ctx = canvas.getContext('2d');
+  var cx = canvas.width / 2, cy = canvas.height / 2, r = canvas.width * 0.44;
+  ctx.fillStyle = bgColor;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = rimColor;
+  ctx.lineWidth = r * 0.07;
+  ctx.stroke();
+  ctx.save();
+  ctx.clip();
+  ctx.strokeStyle = rimColor;
+  ctx.lineWidth = r * 0.03;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.82, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = charColor;
+  ctx.font = 'bold ' + (r * 1.2) + 'px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(charText, cx, cy * 0.98);
+}
+
+var texCanvas = document.createElement('canvas');
+texCanvas.width = 256;
+texCanvas.height = 256;
+createCoinFace(texCanvas, '#e8d5a0', '#c0a030', '陽', '#8b6914');
+var texHeads = new THREE.CanvasTexture(texCanvas);
+texHeads.colorSpace = THREE.SRGBColorSpace;
+
+var texCanvas2 = document.createElement('canvas');
+texCanvas2.width = 256;
+texCanvas2.height = 256;
+createCoinFace(texCanvas2, '#4a4a4a', '#2a2a2a', '\u9670', '#1a1a1a');
+var texTails = new THREE.CanvasTexture(texCanvas2);
+texTails.colorSpace = THREE.SRGBColorSpace;
+
+// ========== COIN MODEL ==========
+var COIN_RADIUS = 0.85;
+var COIN_HEIGHT = 0.12;
+var COIN_HALF_H = COIN_HEIGHT / 2;
+var COIN_REST_Y = TABLE_Y + COIN_HALF_H;
+var COIN_SPAWN_H = COIN_REST_Y + 4;
+
+function createCoinGeometry() {
+  return new THREE.CylinderGeometry(COIN_RADIUS, COIN_RADIUS, COIN_HEIGHT, 64);
+}
+
+var headsMat = new THREE.MeshStandardMaterial({ map: texHeads, roughness: 0.5, metalness: 0.3 });
+var tailsMat = new THREE.MeshStandardMaterial({ map: texTails, roughness: 0.5, metalness: 0.3 });
+var edgeMat = new THREE.MeshStandardMaterial({ color: 0xb8860b, roughness: 0.35, metalness: 0.9 });
+var multiMats = [edgeMat, headsMat, tailsMat];
+
+var coinShape = new CANNON.Box(new CANNON.Vec3(COIN_RADIUS, COIN_HALF_H, COIN_RADIUS));
+
+// ========== COIN STATE ==========
+function createCoinState(xOffset) {
+  var geo = createCoinGeometry();
+  var mesh = new THREE.Mesh(geo, multiMats);
+  mesh.position.set(xOffset, COIN_SPAWN_H, 0);
+  mesh.rotation.set(Math.PI / 2, 0, 0);  // stand on edge
+  scene.add(mesh);
+
+  var body = new CANNON.Body({ mass: 0.005, material: coinMaterial });
+  body.addShape(coinShape);
+  body.position.set(xOffset, COIN_SPAWN_H, 0);
+  body.quaternion.setFromEuler(Math.PI / 2, 0, 0);  // stand on edge
+  body.sleepSpeedLimit = 0.1;
+  body.sleepTimeLimit = 0.8;
+  body.allowSleep = true;
+  physWorld.addBody(body);
+
+  return {
+    mesh: mesh,
+    body: body,
+    ox: xOffset,
+    oz: 0,
+    settled: true,
+    result: null,
+  };
+}
+
+var coins = [];
+
+function createCoins(count) {
+  coins.forEach(function(c) {
+    scene.remove(c.mesh);
+    physWorld.removeBody(c.body);
+  });
+  coins = [];
+  var offsets = count === 1 ? [0] : [-14, 0, 14];
+  for (var i = 0; i < count; i++) {
+    coins.push(createCoinState(offsets[i]));
+  }
+}
+
+// Last shake data
+var shakeAccX = 0, shakeAccY = 0, shakeAccZ = 0;
+var shakeRotX = 0, shakeRotY = 0, shakeRotZ = 0;
+
+function triggerFlip() {
+  if (cooldown) return;
+  cooldown = true;
+  gyroArmed = false;
+  elFlipBtn.disabled = true;
+  clearTimeout(cooldownTimer);
+  cooldownTimer = setTimeout(function() {
+    cooldown = false;
+    elFlipBtn.disabled = false;
+  }, COOLDOWN_MS);
+
+  coins.forEach(function(c) {
+    c.body.position.set(c.ox, COIN_SPAWN_H, c.oz);
+    c.body.quaternion.setFromEuler(Math.PI / 2, 0, 0);
+    c.body.velocity.set(0, 0, 0);
+    c.body.angularVelocity.set(
+      shakeRotX * 6 + (Math.random() - 0.5) * 50,
+      shakeRotY * 6 + (Math.random() - 0.5) * 50,
+      shakeRotZ * 6 + (Math.random() - 0.5) * 50
+    );
+    c.body.wakeUp();
+    c.settled = false;
+    c.result = null;
+  });
+  settledHandled = false;
+
+  if (navigator.vibrate) navigator.vibrate(15);
+}
+
+// ========== PHYSICS SYNC + SETTLE ==========
+var SETTLE_FRAME_COUNT = 40;
+
+function stepPhysics(dt) {
+  physWorld.step(1 / 60, dt, 5);
+
+  if (coins.length > 0) {
+    var c0 = coins[0];
+    elDbMag.textContent = 'bY:' + c0.body.position.y.toFixed(2);
+    elDbRest.textContent = 'gY:' + TABLE_Y.toFixed(1);
+  }
+
+  coins.forEach(function(c) {
+    if (!c.settled) {
+      c.mesh.position.copy(c.body.position);
+      c.mesh.quaternion.copy(c.body.quaternion);
+    }
+
+    if (c.settled) return;
+
+    var v = c.body.velocity;
+    var av = c.body.angularVelocity;
+    var speed = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+    var aSpeed = Math.sqrt(av.x * av.x + av.y * av.y + av.z * av.z);
+
+    if (speed < 0.1 && aSpeed < 0.3) {
+      if (!c._settleFrames) c._settleFrames = 0;
+      c._settleFrames++;
+      if (c._settleFrames >= SETTLE_FRAME_COUNT) {
+        c.settled = true;
+        c.body.sleep();
+        // Determine result from natural resting orientation (no snap)
+        var topN = new THREE.Vector3(0, 1, 0);
+        topN.applyQuaternion(c.mesh.quaternion);
+        c.result = topN.y > 0 ? 'heads' : 'tails';
+      }
+    } else {
+      c._settleFrames = 0;
+    }
+  });
+
+  var activeCoins = coins.filter(function(c) { return !c.settled; });
+  if (activeCoins.length === 0 && !settledHandled &&
+      coins.some(function(c) { return c.result !== null; })) {
+    settledHandled = true;
+    onAllSettled();
+  }
+}
+
+
+function onAllSettled() {
+  var results = coins.map(function(c) { return c.result; });
+  var headsCount = results.filter(function(r) { return r === 'heads'; }).length;
+
+  updateResultBar(headsCount, results);
+
+  if (mode === 'hexagram') {
+    recordHexagramLine(headsCount);
+  }
+}
+
+// ========== RESULT DISPLAY ==========
+function updateResultBar(headsCount, results) {
+  var faceEmoji = { heads: '⚪', tails: '⚫' };
+  elResultCoins.textContent = results.map(function(r) { return faceEmoji[r]; }).join('');
+
+  if (results.length === 1) {
+    elResultLabel.textContent = results[0] === 'heads' ? '正面（阳）' : '反面（阴）';
+  } else if (results.length === 3) {
+    var labelMap = {
+      3: '老阳 ⚊→⚋  阳变阴',
+      2: '少阴 ⚋  阴不变',
+      1: '少阳 ⚊  阳不变',
+      0: '老阴 ⚋→⚊  阴变阳'
+    };
+    elResultLabel.textContent = labelMap[headsCount];
+  }
+  elResultBar.style.display = '';
+}
+
+// ========== I CHING LOGIC ==========
+var LINE_LABELS = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
+
+function getLineType(headsCount) {
+  if (headsCount === 3) return 'laoyang';
+  if (headsCount === 2) return 'shaoyin';
+  if (headsCount === 1) return 'shaoyang';
+  return 'laoyin';
+}
+
+function isYang(headsCount) {
+  return headsCount === 3 || headsCount === 1;
+}
+
+function isChanging(headsCount) {
+  return headsCount === 3 || headsCount === 0;
+}
+
+function recordHexagramLine(headsCount) {
+  var lineType = getLineType(headsCount);
+  hexagramLines[hexagramRound] = { headsCount: headsCount, lineType: lineType };
+  hexagramRound++;
+
+  updateHexagramProgress();
+
+  if (hexagramRound >= 6) {
+    showHexagramResult();
+    elHexagramLines.classList.add('complete');
+    elHexagramResult.classList.add('complete');
+    gyroActive = false;
+    elGyroBadge.classList.remove('active');
+    elDbGyro.textContent = 'done';
+    elFlipBtn.style.display = 'none';
+    elResetBtn.style.display = '';
+  }
+}
+
+function updateHexagramProgress() {
+  elProgressText.textContent = '第 ' + hexagramRound + ' / 6 次';
+  if (hexagramRound >= 6) elProgressText.textContent = '';
+
+  var html = '';
+  for (var i = 0; i < 6; i++) {
+    if (i < hexagramLines.length) {
+      var line = hexagramLines[i];
+      var cls = isYang(line.headsCount) ? 'yang' : 'yin';
+      if (isChanging(line.headsCount)) cls += ' changing';
+      html += '<div class="hexagram-line filled ' + cls + '">';
+      html += '<span class="idx">' + LINE_LABELS[i] + '</span>';
+      html += '<span class="bar"></span>';
+      html += '<span class="dot"></span>';
+      html += '</div>';
+    } else {
+      html += '<div class="hexagram-line">';
+      html += '<span class="idx">' + LINE_LABELS[i] + '</span>';
+      html += '<span class="bar"></span>';
+      html += '<span class="dot"></span>';
+      html += '</div>';
+    }
+  }
+  elHexagramLines.innerHTML = html;
+  if (hexagramRound > 0) elHexagramDisplay.classList.add('show');
+}
+
+function calcHexagramIndexFromLines(lines) {
+  var idx = 0;
+  for (var i = 0; i < 6; i++) {
+    if (i < lines.length && isYang(lines[i].headsCount)) {
+      idx |= (1 << i);
+    }
+  }
+  return idx;
+}
+
+function showHexagramResult() {
+  var originalIdx = calcHexagramIndexFromLines(hexagramLines);
+  var originalGua = HEXAGRAM_MAP[originalIdx];
+
+  var hasChanging = hexagramLines.some(function(l) { return isChanging(l.headsCount); });
+  var changedIdx = originalIdx;
+  if (hasChanging) {
+    changedIdx = 0;
+    for (var i = 0; i < 6; i++) {
+      var yang = isYang(hexagramLines[i].headsCount);
+      if (isChanging(hexagramLines[i].headsCount)) yang = !yang;
+      if (yang) changedIdx |= (1 << i);
+    }
+  }
+  var changedGua = hasChanging ? HEXAGRAM_MAP[changedIdx] : null;
+
+  var LINE_NAMES = ['初爻','二爻','三爻','四爻','五爻','上爻'];
+  var changingList = [];
+  for (var i = 0; i < 6; i++) {
+    if (isChanging(hexagramLines[i].headsCount)) {
+      var t = hexagramLines[i].headsCount === 3 ? '老阳 ⚊→⚋' : '老阴 ⚋→⚊';
+      changingList.push(LINE_NAMES[i] + '（' + t + '）');
+    }
+  }
+
+  var html = '<div class="gua-symbol">' + originalGua.s + '</div>';
+  html += '<div class="gua-name">' + originalGua.n + '</div>';
+  html += '<div class="gua-name" style="font-size:12px;color:#888">' + originalGua.p + '</div>';
+  html += '<div class="gua-detail"><b>卦辞：</b>' + originalGua.g + '</div>';
+  html += '<div class="gua-detail"><b>象曰：</b>' + originalGua.x + '</div>';
+  if (hasChanging) {
+    html += '<div class="changed-name">' + changedGua.s + ' 变卦：' + changedGua.n + '</div>';
+    html += '<div class="gua-detail"><b>变卦辞：</b>' + changedGua.g + '</div>';
+    html += '<div class="gua-detail" style="color:#ce2b37;margin-top:6px"><b>变爻：</b>' + changingList.join('、') + '</div>';
+  }
+  html += '<button class="btn-copy" id="copyBtn" style="margin-top:8px">复制结果</button>';
+  elHexagramResult.innerHTML = html;
+
+  // Build plain text for copy
+  var plainText = originalGua.s + ' ' + originalGua.n + ' (' + originalGua.p + ')\n';
+  plainText += '卦辞：' + originalGua.g + '\n';
+  plainText += '象曰：' + originalGua.x + '\n';
+  if (hasChanging) {
+    plainText += '\n变卦：' + changedGua.s + ' ' + changedGua.n + '\n';
+    plainText += '变卦辞：' + changedGua.g + '\n';
+    plainText += '变爻：' + changingList.join('、') + '\n';
+  }
+  plainText += '\n—— 抛硬币卜卦 🪙';
+
+  document.getElementById('copyBtn').onclick = function() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(plainText).then(function() {
+        var btn = document.getElementById('copyBtn');
+        btn.textContent = '已复制 ✓';
+        setTimeout(function() { btn.textContent = '复制结果'; }, 2000);
+      });
+    }
+  };
+
+  elResultBar.style.display = 'none';
+}
+
+// ========== MODE SWITCHING ==========
+function setMode(newMode) {
+  mode = newMode;
+  gyroActive = true;
+  elGyroBadge.classList.add('active');
+  elDbGyro.className = 'ok';
+  elDbGyro.textContent = 'OK';
+  elTabSingle.classList.toggle('active', mode === 'single');
+  elTabTriple.classList.toggle('active', mode === 'triple');
+  elTabHexagram.classList.toggle('active', mode === 'hexagram');
+
+  // Reset state
+  elHexagramLines.classList.remove('complete');
+  elHexagramResult.classList.remove('complete');
+  hexagramLines = [];
+  hexagramRound = 0;
+  elHexagramDisplay.classList.remove('show');
+  elHexagramResult.innerHTML = '';
+  elHexagramLines.innerHTML = '';
+  elProgressText.textContent = '';
+  elResultBar.style.display = 'none';
+  elResultCoins.textContent = '';
+  elResultLabel.textContent = '';
+  elFlipBtn.style.display = '';
+  elResetBtn.style.display = 'none';
+
+  if (mode === 'hexagram') {
+    createCoins(3);
+    updateHexagramProgress();
+    elProgressText.textContent = '第 0 / 6 次';
+  } else if (mode === 'triple') {
+    createCoins(3);
+    elProgressText.textContent = '';
+  } else {
+    createCoins(1);
+    elProgressText.textContent = '';
+  }
+}
+
+elTabSingle.addEventListener('click', function() { setMode('single'); });
+elTabTriple.addEventListener('click', function() { setMode('triple'); });
+elTabHexagram.addEventListener('click', function() { setMode('hexagram'); });
+
+elResetBtn.addEventListener('click', function() {
+  elHexagramLines.classList.remove('complete');
+  elHexagramResult.classList.remove('complete');
+  hexagramLines = [];
+  hexagramRound = 0;
+  gyroActive = true;
+  elGyroBadge.classList.add('active');
+  elDbGyro.textContent = 'OK';
+  elDbGyro.className = 'ok';
+  elHexagramDisplay.classList.remove('show');
+  elHexagramResult.innerHTML = '';
+  elHexagramLines.innerHTML = '';
+  elResultBar.style.display = 'none';
+  elResultCoins.textContent = '';
+  elResultLabel.textContent = '';
+  elFlipBtn.style.display = '';
+  elResetBtn.style.display = 'none';
+  elProgressText.textContent = '第 0 / 6 次';
+  createCoins(3);
+});
+
+elFlipBtn.addEventListener('click', triggerFlip);
+
+// ========== GYROSCOPE / DEVICE MOTION ==========
+var SHAKE_RATIO = 1.55;
+var COOLDOWN_MS = 1500;
+var SETTLE_FRAMES = 20;
+
+var restingMag = 0;
+var lpAlpha = 0.05;
+var gyroArmed = true;
+var settleCounter = 0;
+var sensorCheckDone = false;
+
+function tryRegisterMotionListener() {
+  gyroActive = true;
+  elDbGyro.textContent = 'listn';
+  elDbGyro.className = 'warn';
+  window.addEventListener('devicemotion', handleDeviceMotion);
+  window.addEventListener('deviceorientation', handleDeviceOrientation);
+
+  setTimeout(function() {
+    if (!sensorCheckDone && debugEvCount === 0 && debugOrCount === 0) {
+      elDbGyro.textContent = 'NO EV';
+      elDbGyro.className = 'warn';
+      elDbMag.textContent = 'HTTP?';
+    }
+  }, 3000);
+}
+
+function handleDeviceMotion(e) {
+  if (!gyroActive) return;
+
+  var raw = e.accelerationIncludingGravity;
+  if (!raw || raw.x === null) return;
+
+  var mag = Math.sqrt(raw.x * raw.x + raw.y * raw.y + raw.z * raw.z);
+  if (mag <= 0) return;
+
+  debugEvCount++;
+  sensorCheckDone = true;
+
+  // Capture linear acceleration for coin launch direction
+  shakeAccX = raw.x;
+  shakeAccY = raw.y;
+  shakeAccZ = raw.z;
+
+  // Capture rotation rate (deg/s) for coin angular velocity
+  if (e.rotationRate) {
+    shakeRotX = (e.rotationRate.beta  || 0) * (Math.PI / 180);
+    shakeRotY = (e.rotationRate.alpha || 0) * (Math.PI / 180);
+    shakeRotZ = (e.rotationRate.gamma || 0) * (Math.PI / 180);
+  }
+
+  if (restingMag === 0) {
+    restingMag = mag;
+  } else {
+    restingMag += lpAlpha * (mag - restingMag);
+  }
+
+  var ratio = mag / Math.max(restingMag, 0.1);
+
+  if (debugEvCount % 8 === 0) {
+    elDbGyro.textContent = 'OK';
+    elDbGyro.className = 'ok';
+    elDbMag.textContent = mag.toFixed(2);
+    elDbRest.textContent = restingMag.toFixed(2);
+    elDbRatio.textContent = ratio.toFixed(3);
+    elDbEv.textContent = '' + debugEvCount;
+  }
+
+  if (!cooldown && gyroArmed && ratio > SHAKE_RATIO) {
+    triggerFlip();
+    gyroArmed = false;
+    settleCounter = 0;
+  }
+}
+
+var debugOrCount = 0;
+
+function handleDeviceOrientation(e) {
+  if (!gyroActive) return;
+  debugOrCount++;
+  sensorCheckDone = true;
+  if (debugOrCount === 5 && debugEvCount === 0) {
+    elDbGyro.textContent = 'orOnly';
+    elDbGyro.className = 'warn';
+  }
+}
+
+function updateGyroArmState() {
+  if (gyroArmed) return;
+  if (cooldown) {
+    settleCounter = 0;
+    return;
+  }
+  settleCounter++;
+  if (settleCounter >= SETTLE_FRAMES) {
+    gyroArmed = true;
+    settleCounter = 0;
+  }
+}
+
+function requestGyroPermission() {
+  isDesktop = !('ontouchstart' in window) && !navigator.maxTouchPoints;
+
+  if (isDesktop) {
+    elGyroBadge.style.display = 'none';
+    gyroPermission = 'desktop';
+    elDbGyro.textContent = 'PC';
+    elDbGyro.className = 'warn';
+    return;
+  }
+
+  var DME = window.DeviceMotionEvent;
+  if (!DME) { try { DME = DeviceMotionEvent; } catch(e) {} }
+  var needPermission = !!(DME && DME.requestPermission);
+
+  if (needPermission) {
+    elPermPrompt.classList.remove('hidden');
+    elPermBtn.classList.remove('hidden');
+    elPermRetryBtn.classList.add('hidden');
+    elPermIcon.textContent = '\u{1F4F1}';
+    elPermText.innerHTML = '\u9700\u8981\u9640\u8776\u4eea\u6743\u9650\u6765\u68c0\u6d4b<br>\u624b\u673a\u7684\u629b\u63b7\u52a8\u4f5c';
+    elPermBtn.textContent = '\u542f\u7528\u9640\u8776\u4eea';
+    elGyroBadge.classList.add('denied');
+    elDbGyro.textContent = 'prompt';
+    elDbGyro.className = 'warn';
+
+    elPermBtn.onclick = function() {
+      DME.requestPermission()
+        .then(function(state) {
+          if (state === 'granted') {
+            elGyroBadge.classList.add('active');
+            elGyroBadge.classList.remove('denied');
+            elPermPrompt.classList.add('hidden');
+            tryRegisterMotionListener();
+          } else {
+            gyroPermission = 'denied';
+            showPermissionDenied();
+          }
+        })
+        .catch(function() {
+          gyroPermission = 'denied';
+          showPermissionDenied();
+        });
+    };
+
+    elPermRetryBtn.onclick = function() {
+      DME.requestPermission()
+        .then(function(state) {
+          if (state === 'granted') {
+            elGyroBadge.classList.add('active');
+            elGyroBadge.classList.remove('denied');
+            elPermPrompt.classList.add('hidden');
+            tryRegisterMotionListener();
+          }
+        })
+        .catch(function() {});
+    };
+  } else {
+    elGyroBadge.classList.add('active');
+    tryRegisterMotionListener();
+  }
+}
+
+function showPermissionDenied() {
+  elGyroBadge.classList.add('denied');
+  elPermPrompt.classList.remove('hidden');
+  elPermBtn.classList.add('hidden');
+  elPermRetryBtn.classList.remove('hidden');
+  elPermIcon.textContent = '\u26A0\uFE0F';
+  elPermText.innerHTML = '\u6743\u9650\u5df2\u88ab\u62d2\u7edd\uff0c\u8bf7\u5728\u7cfb\u7edf\u8bbe\u7f6e\u4e2d<br>\u5141\u8bb8\u8fd0\u52a8\u4f20\u611f\u5668\u6743\u9650';
+}
+
+
+// ========== RESIZE ==========
+window.addEventListener('resize', function() {
+  var rect = elCanvasWrap.getBoundingClientRect();
+  camera.aspect = rect.width / rect.height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(rect.width, rect.height, false);
+});
+
+// ========== CAMERA TRACKING ==========
+function updateCamera() {
+  if (coins.length === 0) return;
+
+  // Compute centroid of all coins (XZ for look-at, Y for height)
+  var cx = 0, cy = 0, cz = 0;
+  coins.forEach(function(c) {
+    cx += c.mesh.position.x;
+    cy += c.mesh.position.y;
+    cz += c.mesh.position.z;
+  });
+  cx /= coins.length;
+  cy /= coins.length;
+  cz /= coins.length;
+
+  // Compute max horizontal spread from centroid
+  var maxDist = 0;
+  coins.forEach(function(c) {
+    var dx = c.mesh.position.x - cx;
+    var dz = c.mesh.position.z - cz;
+    var d2 = dx * dx + dz * dz;
+    if (d2 > maxDist) maxDist = d2;
+  });
+  var spread = Math.sqrt(maxDist);
+
+  // Target look-at: centroid, but at table surface level
+  var targetLook = new THREE.Vector3(cx, TABLE_Y, cz);
+
+  // Target camera position: above & behind centroid,
+  // pull back further when coins are spread out
+  var baseZ = 14;
+  var baseY = 24;
+  var tz = baseZ + spread * 2.2;
+  var ty = baseY + spread * 1.2;
+  var targetPos = new THREE.Vector3(cx, cy + ty, cz + tz);
+
+  // Clamp: don't go below table level
+  if (targetPos.y < TABLE_Y + 1) targetPos.y = TABLE_Y + 1;
+
+  // Smoothly lerp camera position and look-at target
+  var smooth = 0.04;
+  camTargetLook.lerp(targetLook, smooth);
+  camTargetPos.lerp(targetPos, smooth);
+
+  camera.position.copy(camTargetPos);
+  camera.lookAt(camTargetLook);
+}
+
+// ========== RENDER LOOP ==========
+var lastTime = performance.now();
+function animate() {
+  requestAnimationFrame(animate);
+  var now = performance.now();
+  var dt = (now - lastTime) / 1000;
+  lastTime = now;
+  stepPhysics(dt);
+  updateGyroArmState();
+  updateCamera();
+
+  renderer.render(scene, camera);
+}
+
+setMode('hexagram');
+animate();
+
+// ========== WAKE LOCK (prevent screen sleep) ==========
+var wakeLock = null;
+function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    navigator.wakeLock.request('screen').then(function(lock) {
+      wakeLock = lock;
+      wakeLock.addEventListener('release', function() {
+        wakeLock = null;
+      });
+    }).catch(function() {});
+  } catch(e) {}
+}
+// Request on first user interaction
+document.addEventListener('click', function once() {
+  requestWakeLock();
+}, { once: true });
+// Re-acquire when tab becomes visible again
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && !wakeLock) {
+    requestWakeLock();
+  }
+});
+</script>
+</body>
+</html>
