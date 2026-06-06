@@ -40,19 +40,34 @@ body{
 }
 .overlay>*{pointer-events:auto}
 
+.result-panel{
+  position:absolute;left:6px;bottom:120px;
+  width:calc(50% - 12px);
+  display:flex;flex-direction:column;align-items:center;gap:4px
+}
 .result-bar{
   background:rgba(20,22,26,.45);border:1px solid rgba(255,255,255,.08);border-radius:12px;
-  padding:10px 16px;font-size:14px;text-align:center;min-width:160px;transition:background .3s
+  padding:10px 12px;font-size:14px;text-align:center;transition:background .3s;width:100%
 }
 .result-bar .coins{font-size:22px;letter-spacing:6px;margin-bottom:2px}
 .result-bar .label{font-size:12px;color:#888}
 
-.hexagram-display{display:none;width:100%;max-width:360px}
-.hexagram-display.show{display:block;max-height:60vh;overflow-y:auto}
+.hexagram-display{
+  display:none;position:absolute;right:6px;bottom:120px;
+  z-index:5;overflow-y:auto;max-height:35vh;width:calc(50% - 12px);
+  flex-direction:column;align-items:center;gap:6px;
+  background:transparent;pointer-events:none
+}
+.hexagram-display.show{display:flex}
+.hexagram-display.complete{
+  top:0;left:0;right:0;bottom:0;width:auto;
+  max-height:none;padding:16px 16px 90px;
+  background:rgba(14,14,18,.94);pointer-events:auto
+}
 .hexagram-lines{
   display:flex;flex-direction:column-reverse;gap:6px;
   padding:12px;background:rgba(20,22,26,.45);border:1px solid rgba(255,255,255,.08);border-radius:12px;
-  transition:background .3s
+  transition:background .3s;width:100%;max-width:360px
 }
 .hexagram-lines.complete{
   background:rgba(30,30,34,.92);border-color:#333
@@ -80,12 +95,12 @@ body{
 .hexagram-line.changing .dot{display:block}
 
 .hexagram-result{
-  margin-top:10px;text-align:center;font-size:13px;color:#c0a030;
+  display:none;margin-top:10px;text-align:center;font-size:13px;color:#c0a030;
   background:rgba(20,22,26,.45);border:1px solid rgba(255,255,255,.08);border-radius:12px;
-  padding:10px;transition:background .3s
+  padding:10px;transition:background .3s;width:100%;max-width:360px
 }
 .hexagram-result.complete{
-  background:rgba(30,30,34,.92);border-color:#333
+  display:block;background:rgba(30,30,34,.92);border-color:#333
 }
 .hexagram-result .gua-name{font-size:24px;font-weight:700;margin-bottom:2px}
 .hexagram-result .gua-symbol{font-size:48px;margin-bottom:4px}
@@ -95,7 +110,7 @@ body{
 
 .controls{
   display:flex;justify-content:center;gap:12px;
-  padding:12px 16px;flex-shrink:0
+  padding:12px 16px;flex-shrink:0;position:relative;z-index:10
 }
 .btn{
   padding:12px 28px;border-radius:24px;font-size:14px;font-weight:600;
@@ -130,7 +145,7 @@ body{
 .permission-prompt .inner p{font-size:13px;color:#888;line-height:1.6;margin-bottom:16px}
 
 .progress-text{
-  font-size:12px;color:#555;text-align:center;margin-top:4px
+  font-size:12px;color:#555
 }
 
 .debug-panel{
@@ -145,6 +160,102 @@ body{
 .footer{text-align:center;padding:8px 16px;flex-shrink:0}
 .footer a{font-size:11px;color:#444;text-decoration:none}
 .footer a:hover{color:#666}
+
+/* LLM Settings */
+.settings-btn{
+  position:absolute;top:24px;right:24px;width:32px;height:32px;
+  border-radius:50%;background:rgba(20,22,26,.65);border:1px solid rgba(255,255,255,.1);
+  color:#888;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  z-index:1;transition:all .2s
+}
+.settings-btn:hover{color:#c0a030;border-color:#c0a030}
+
+.settings-modal{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(10,10,12,.92);z-index:10;border-radius:14px
+}
+.settings-modal.hidden{display:none}
+.settings-modal .inner{width:300px;padding:24px 20px;text-align:left}
+.settings-modal .inner h3{font-size:16px;color:#c0a030;margin-bottom:16px;text-align:center}
+.settings-modal label{display:block;font-size:11px;color:#666;margin-bottom:4px}
+.settings-modal input{
+  width:100%;padding:10px 12px;margin-bottom:12px;border-radius:8px;
+  border:1px solid #333;background:#1c1c1e;color:#e4e4e6;font-size:13px;outline:0
+}
+.settings-modal input:focus{border-color:#c0a030}
+.settings-modal .btn-row{display:flex;gap:10px;margin-top:4px}
+.settings-modal .btn-row .btn{flex:1;padding:10px 0;font-size:13px}
+
+/* Question input area */
+.ask-section{
+  margin-top:10px;padding:12px;
+  background:rgba(20,22,26,.45);border:1px solid rgba(255,255,255,.08);border-radius:12px;
+  text-align:center;transition:background .3s;width:100%;max-width:360px
+}
+.ask-section.complete{background:rgba(30,30,34,.92);border-color:#333}
+.ask-section .ask-label{font-size:14px;color:#c0a030;margin-bottom:8px}
+.ask-section textarea{
+  width:100%;padding:10px 12px;border-radius:8px;
+  border:1px solid #333;background:#1c1c1e;color:#e4e4e6;font-size:13px;resize:vertical;
+  min-height:48px;max-height:100px;outline:0;font-family:inherit
+}
+.ask-section textarea:focus{border-color:#c0a030}
+.ask-section .btn-ask{
+  margin-top:8px;padding:8px 24px;border-radius:16px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;background:#c0a030;color:#1c1c1e;transition:all .2s
+}
+.ask-section .btn-ask:disabled{background:#333;color:#555;cursor:default}
+.ask-section .btn-ask:active:not(:disabled){transform:scale(.94)}
+
+/* Interpretation result */
+.interpretation-panel{
+  margin-top:10px;padding:14px;
+  background:rgba(20,22,26,.45);border:1px solid rgba(255,255,255,.08);border-radius:12px;
+  text-align:left;position:relative;transition:background .3s;width:100%;max-width:360px
+}
+.interpretation-panel.complete{background:rgba(30,30,34,.92);border-color:#333}
+.interpretation-panel .interp-header{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:8px
+}
+.interpretation-panel .interp-header span{font-size:13px;color:#c0a030;font-weight:600}
+.interpretation-panel .interp-body{
+  font-size:14px;color:#d4d4d6;line-height:1.7;white-space:pre-wrap;word-break:break-word
+}
+.interpretation-panel .btn-copy-interp{
+  background:transparent;color:#888;border:1px solid #444;padding:4px 12px;
+  border-radius:12px;font-size:11px;cursor:pointer;transition:all .2s
+}
+.interpretation-panel .btn-copy-interp:hover{color:#c0a030;border-color:#c0a030}
+
+/* History */
+.history-section{
+  margin-top:10px;
+  background:rgba(20,22,26,.45);border:1px solid rgba(255,255,255,.08);border-radius:12px;
+  overflow:hidden;transition:background .3s;width:100%;max-width:360px
+}
+.history-section.complete{background:rgba(30,30,34,.92);border-color:#333}
+.history-section .history-toggle{
+  padding:10px 14px;font-size:12px;color:#888;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;user-select:none
+}
+.history-section .history-toggle:hover{color:#c0a030}
+.history-section .history-toggle .arrow{transition:transform .2s;font-size:10px}
+.history-section .history-toggle.open .arrow{transform:rotate(180deg)}
+.history-section .history-list{display:none;padding:0 14px 10px}
+.history-section .history-list.show{display:block}
+.history-item{
+  padding:8px 0;border-top:1px solid rgba(255,255,255,.06);cursor:pointer
+}
+.history-item .hi-time{font-size:10px;color:#555}
+.history-item .hi-question{font-size:12px;color:#aaa;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-item .hi-body{display:none;font-size:12px;color:#ccc;line-height:1.5;margin-top:6px;white-space:pre-wrap;word-break:break-word}
+.history-item.expanded .hi-body{display:block}
+.history-item .hi-delete{
+  float:right;font-size:10px;color:#555;padding:2px 8px;border:1px solid #333;
+  border-radius:8px;cursor:pointer;transition:all .2s
+}
+.history-item .hi-delete:hover{color:#ce2b37;border-color:#ce2b37}
 
 @media(max-width:360px){
   .tabs{padding:10px 12px 0}
@@ -169,6 +280,7 @@ body{
 
   <div class="canvas-wrap" id="canvasWrap">
     <div class="gyro-badge" id="gyroBadge" title="陀螺仪状态"></div>
+    <div class="settings-btn" id="settingsBtn" title="LLM 解卦设置">⚙</div>
     <div class="debug-panel" id="debugPanel">
       gyro:<span class="warn" id="dbGyro">---</span>
       mag:<b id="dbMag">--</b>
@@ -184,16 +296,51 @@ body{
         <button class="btn btn-secondary hidden" id="permRetryBtn">重试</button>
       </div>
     </div>
-    <div class="overlay" id="overlay">
-      <div class="result-bar" id="resultBar">
-        <div class="coins" id="resultCoins"></div>
-        <div class="label" id="resultLabel"></div>
+    <div class="settings-modal hidden" id="settingsModal">
+      <div class="inner">
+        <h3>⚙ LLM 解卦设置</h3>
+        <label>API 地址</label>
+        <input type="text" id="llmApi" placeholder="https://api.deepseek.com/v1/chat/completions">
+        <label>API Key</label>
+        <input type="password" id="llmKey" placeholder="sk-...">
+        <label>模型名称</label>
+        <input type="text" id="llmModel" placeholder="deepseek-v4-flash">
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="settingsCancelBtn">取消</button>
+          <button class="btn" id="settingsSaveBtn">保存</button>
+        </div>
       </div>
-      <div class="hexagram-display" id="hexagramDisplay">
-        <div class="hexagram-lines" id="hexagramLines"></div>
-        <div class="hexagram-result" id="hexagramResult"></div>
+    </div>
+    <div class="overlay" id="overlay"></div>
+  </div>
+
+  <div class="result-panel" id="resultPanel">
+    <div class="progress-text" id="progressText"></div>
+    <div class="result-bar" id="resultBar">
+      <div class="coins" id="resultCoins"></div>
+      <div class="label" id="resultLabel"></div>
+    </div>
+  </div>
+  <div class="hexagram-display" id="hexagramDisplay">
+    <div class="hexagram-lines" id="hexagramLines"></div>
+    <div class="hexagram-result" id="hexagramResult"></div>
+    <div class="ask-section hidden" id="askSection">
+      <div class="ask-label">您所卜何事？</div>
+      <textarea id="askInput" rows="2" placeholder="请输入您想问的事情..."></textarea>
+      <button class="btn-ask" id="askBtn">🔮 解卦</button>
+    </div>
+    <div class="interpretation-panel hidden" id="interpPanel">
+      <div class="interp-header">
+        <span>🔮 AI 解卦</span>
+        <button class="btn-copy-interp" id="copyInterpBtn">复制</button>
       </div>
-      <div class="progress-text" id="progressText"></div>
+      <div class="interp-body" id="interpBody"></div>
+    </div>
+    <div class="history-section hidden" id="historySection">
+      <div class="history-toggle" id="historyToggle">
+        历史解卦记录 <span class="arrow">▼</span>
+      </div>
+      <div class="history-list" id="historyList"></div>
     </div>
   </div>
 
@@ -427,6 +574,7 @@ var elResetBtn = document.getElementById('resetBtn');
 var elResultCoins = document.getElementById('resultCoins');
 var elResultLabel = document.getElementById('resultLabel');
 var elResultBar = document.getElementById('resultBar');
+var elResultPanel = document.getElementById('resultPanel');
 var elHexagramDisplay = document.getElementById('hexagramDisplay');
 var elHexagramLines = document.getElementById('hexagramLines');
 var elHexagramResult = document.getElementById('hexagramResult');
@@ -446,6 +594,30 @@ var elDbRest = document.getElementById('dbRest');
 var elDbRatio = document.getElementById('dbRatio');
 var elDbEv = document.getElementById('dbEv');
 
+// LLM settings
+var elSettingsBtn = document.getElementById('settingsBtn');
+var elSettingsModal = document.getElementById('settingsModal');
+var elLlmApi = document.getElementById('llmApi');
+var elLlmKey = document.getElementById('llmKey');
+var elLlmModel = document.getElementById('llmModel');
+var elSettingsCancelBtn = document.getElementById('settingsCancelBtn');
+var elSettingsSaveBtn = document.getElementById('settingsSaveBtn');
+
+// LLM ask section
+var elAskSection = document.getElementById('askSection');
+var elAskInput = document.getElementById('askInput');
+var elAskBtn = document.getElementById('askBtn');
+
+// Interpretation
+var elInterpPanel = document.getElementById('interpPanel');
+var elInterpBody = document.getElementById('interpBody');
+var elCopyInterpBtn = document.getElementById('copyInterpBtn');
+
+// History
+var elHistorySection = document.getElementById('historySection');
+var elHistoryToggle = document.getElementById('historyToggle');
+var elHistoryList = document.getElementById('historyList');
+
 // ========== APP STATE ==========
 var mode = 'single';
 var gyroActive = false;
@@ -457,11 +629,76 @@ var isDesktop = false;
 var hexagramLines = [];
 var hexagramRound = 0;
 var settledHandled = true;
+var llmPromptText = '';
 
 // Pre-initialize gyro BEFORE Three.js (so if Three.js fails, gyro debug still works)
 elDbGyro.textContent = 'init';
 elDbGyro.className = 'warn';
 requestGyroPermission();
+
+// ========== LLM SETTINGS ==========
+var LLM_STORAGE_KEY = 'iching_llm_settings';
+var INTERP_STORAGE_KEY = 'iching_interpretations';
+
+function loadLlmSettings() {
+  var apiSet = false, keySet = false, modelSet = false;
+  try {
+    var raw = localStorage.getItem(LLM_STORAGE_KEY);
+    if (raw) {
+      var s = JSON.parse(raw);
+      if (s.api) { elLlmApi.value = s.api; apiSet = true; }
+      if (s.key) { elLlmKey.value = s.key; keySet = true; }
+      if (s.model) { elLlmModel.value = s.model; modelSet = true; }
+    }
+  } catch(e) {}
+  if (!apiSet) elLlmApi.value = 'https://api.deepseek.com/v1/chat/completions';
+  if (!modelSet) elLlmModel.value = 'deepseek-v4-flash';
+}
+
+function saveLlmSettings() {
+  var s = {
+    api: elLlmApi.value.trim(),
+    key: elLlmKey.value.trim(),
+    model: elLlmModel.value.trim()
+  };
+  try { localStorage.setItem(LLM_STORAGE_KEY, JSON.stringify(s)); } catch(e) {}
+}
+
+function updateSettingsSaveBtn() {
+  var api = elLlmApi.value.trim();
+  var key = elLlmKey.value.trim();
+  var model = elLlmModel.value.trim();
+  elSettingsSaveBtn.disabled = !(api && key && model);
+}
+
+elSettingsBtn.onclick = function() {
+  elSettingsModal.classList.remove('hidden');
+  updateSettingsSaveBtn();
+};
+
+elLlmApi.addEventListener('input', updateSettingsSaveBtn);
+elLlmKey.addEventListener('input', updateSettingsSaveBtn);
+elLlmModel.addEventListener('input', updateSettingsSaveBtn);
+
+elSettingsCancelBtn.onclick = function() {
+  elSettingsModal.classList.add('hidden');
+};
+
+elSettingsSaveBtn.onclick = function() {
+  saveLlmSettings();
+  elSettingsModal.classList.add('hidden');
+  if (!elAskSection.classList.contains('hidden')) showAskSection();
+};
+
+// Close modal on background click
+elSettingsModal.addEventListener('click', function(e) {
+  if (e.target === elSettingsModal) {
+    elSettingsModal.classList.add('hidden');
+    if (!elAskSection.classList.contains('hidden')) showAskSection();
+  }
+});
+
+loadLlmSettings();
 
 // ========== THREE.JS INIT ==========
 var wrapRect = elCanvasWrap.getBoundingClientRect();
@@ -685,7 +922,7 @@ function createCoins(count) {
     physWorld.removeBody(c.body);
   });
   coins = [];
-  var offsets = count === 1 ? [0] : [-14, 0, 14];
+  var offsets = count === 1 ? [0] : [-9, 0, 9];
   for (var i = 0; i < count; i++) {
     coins.push(createCoinState(offsets[i]));
   }
@@ -801,7 +1038,7 @@ function updateResultBar(headsCount, results) {
     };
     elResultLabel.textContent = labelMap[headsCount];
   }
-  elResultBar.style.display = '';
+  elResultPanel.style.display = '';
 }
 
 // ========== I CHING LOGIC ==========
@@ -831,6 +1068,7 @@ function recordHexagramLine(headsCount) {
 
   if (hexagramRound >= 6) {
     showHexagramResult();
+    elHexagramDisplay.classList.add('complete');
     elHexagramLines.classList.add('complete');
     elHexagramResult.classList.add('complete');
     gyroActive = false;
@@ -937,7 +1175,234 @@ function showHexagramResult() {
     }
   };
 
-  elResultBar.style.display = 'none';
+  elResultPanel.style.display = 'none';
+
+  // Show LLM ask section and history
+  showAskSection();
+  renderHistory();
+
+  // Build detailed LLM prompt text with line-by-line details
+  llmPromptText = '占卜结果：\n';
+  llmPromptText += '本卦：' + originalGua.s + ' ' + originalGua.n + ' (' + originalGua.p + ')\n';
+  llmPromptText += '卦辞：' + originalGua.g + '\n';
+  llmPromptText += '象曰：' + originalGua.x + '\n';
+  llmPromptText += '\n六爻详情：\n';
+  var LINE_NAMES2 = ['初爻','二爻','三爻','四爻','五爻','上爻'];
+  var lineTypeNames = { laoyang: '老阳（⚊→⚋ 变爻）', shaoyin: '少阴（⚋ 不变）', shaoyang: '少阳（⚊ 不变）', laoyin: '老阴（⚋→⚊ 变爻）' };
+  for (var i = 0; i < 6; i++) {
+    var lt = hexagramLines[i].lineType;
+    llmPromptText += LINE_NAMES2[i] + '：' + (lineTypeNames[lt] || lt) + '\n';
+  }
+  if (hasChanging) {
+    llmPromptText += '\n变卦：' + changedGua.s + ' ' + changedGua.n + ' (' + changedGua.p + ')\n';
+    llmPromptText += '变卦辞：' + changedGua.g + '\n';
+    llmPromptText += '变爻：' + changingList.join('、') + '\n';
+  }
+}
+
+// ========== LLM ASK & INTERPRETATION ==========
+function showAskSection() {
+  elAskSection.classList.remove('hidden');
+  elAskSection.classList.add('complete');
+  elAskInput.value = '';
+  elAskInput.disabled = false;
+  elInterpPanel.classList.add('hidden');
+
+  var api = elLlmApi.value.trim();
+  var key = elLlmKey.value.trim();
+  if (!api || !key) {
+    elAskBtn.textContent = '请先设置 API';
+    elAskBtn.disabled = false;
+  } else {
+    elAskBtn.textContent = '🔮 解卦';
+    elAskBtn.disabled = false;
+  }
+}
+
+function hideAskSection() {
+  elAskSection.classList.add('hidden');
+  elAskSection.classList.remove('complete');
+  elInterpPanel.classList.add('hidden');
+  elHistorySection.classList.add('hidden');
+  elHistorySection.classList.remove('complete');
+}
+
+elAskBtn.onclick = function() {
+  var api = elLlmApi.value.trim();
+  var key = elLlmKey.value.trim();
+  var model = elLlmModel.value.trim();
+  if (!api || !key) {
+    elSettingsModal.classList.remove('hidden');
+    return;
+  }
+
+  var question = elAskInput.value.trim();
+  if (!question) { elAskInput.focus(); return; }
+
+  elAskInput.disabled = true;
+  elAskBtn.disabled = true;
+  elAskBtn.textContent = '⏳ 解卦中...';
+  elInterpBody.textContent = '';
+  elInterpPanel.classList.remove('hidden');
+  elInterpPanel.classList.remove('complete');
+
+  var systemPrompt = '你是一位精通周易的占卜解卦大师。请根据用户提供的六爻占卜结果，结合用户所问的具体问题，给出专业的解卦分析。你的回答应该包含：\n1. 本卦解读——本卦的卦辞含义及其对用户问题的启示\n2. 变爻分析——如有变爻，分析变爻爻辞及其吉凶变化\n3. 变卦解读——如有变卦，分析变卦的指引\n4. 综合建议——结合用户具体问题的行动建议\n请用简洁但全面的中文回答，避免冗长。';
+
+  var userPrompt = llmPromptText + '\n\n用户所问：' + question;
+
+  fetchLlmInterpretation(api, key, model, systemPrompt, userPrompt, function(err, result) {
+    elAskInput.disabled = false;
+    elAskBtn.disabled = false;
+    elAskBtn.textContent = '🔮 重新解卦';
+
+    if (err) {
+      elInterpBody.textContent = '解卦失败：' + err;
+      elInterpPanel.classList.add('complete');
+      return;
+    }
+
+    elInterpBody.textContent = result;
+    elInterpPanel.classList.add('complete');
+
+    // Save to history
+    saveInterpretation(question, llmPromptText, result);
+    renderHistory();
+  });
+};
+
+function fetchLlmInterpretation(api, key, model, systemPrompt, userPrompt, callback) {
+  var controller = new AbortController();
+  var timeout = setTimeout(function() { controller.abort(); }, 30000);
+
+  fetch(api, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + key
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000
+    }),
+    signal: controller.signal
+  })
+  .then(function(res) {
+    clearTimeout(timeout);
+    if (!res.ok) {
+      return res.text().then(function(t) {
+        var msg = 'HTTP ' + res.status;
+        try {
+          var j = JSON.parse(t);
+          if (j.error && j.error.message) msg += ': ' + j.error.message;
+        } catch(e) { msg += ': ' + t.slice(0, 200); }
+        callback(msg, null);
+      });
+    }
+    return res.json();
+  })
+  .then(function(data) {
+    if (!data) return;
+    if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+      callback(null, data.choices[0].message.content);
+    } else {
+      callback('API 返回格式异常', null);
+    }
+  })
+  .catch(function(err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      callback('请求超时（30秒），请检查网络或 API 地址', null);
+    } else {
+      callback('网络错误：' + err.message, null);
+    }
+  });
+}
+
+// Copy interpretation
+elCopyInterpBtn.onclick = function() {
+  var text = elInterpBody.textContent;
+  if (!text) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() {
+      elCopyInterpBtn.textContent = '已复制 ✓';
+      setTimeout(function() { elCopyInterpBtn.textContent = '复制'; }, 2000);
+    });
+  }
+};
+
+// ========== INTERPRETATION HISTORY ==========
+function loadHistory() {
+  try {
+    var raw = localStorage.getItem(INTERP_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveInterpretation(question, hexagramText, interpretation) {
+  var history = loadHistory();
+  history.unshift({
+    timestamp: Math.floor(Date.now() / 1000),
+    question: question,
+    hexagram_text: hexagramText,
+    interpretation: interpretation
+  });
+  if (history.length > 3) history = history.slice(0, 3);
+  try { localStorage.setItem(INTERP_STORAGE_KEY, JSON.stringify(history)); } catch(e) {}
+}
+
+function renderHistory() {
+  var history = loadHistory();
+  if (history.length === 0) {
+    elHistorySection.classList.add('hidden');
+    elHistorySection.classList.remove('complete');
+    return;
+  }
+  elHistorySection.classList.remove('hidden');
+  elHistorySection.classList.add('complete');
+  elHistoryList.innerHTML = '';
+
+  history.forEach(function(item, idx) {
+    var dateStr = new Date(item.timestamp * 1000).toLocaleString('zh-CN');
+    var el = document.createElement('div');
+    el.className = 'history-item';
+    el.innerHTML =
+      '<span class="hi-time">' + dateStr + '</span>' +
+      '<span class="hi-delete" data-idx="' + idx + '">删除</span>' +
+      '<div class="hi-question">' + escapeHtml(item.question) + '</div>' +
+      '<div class="hi-body">' + escapeHtml(item.interpretation) + '</div>';
+    el.onclick = function(e) {
+      if (e.target.classList.contains('hi-delete')) {
+        e.stopPropagation();
+        deleteHistoryItem(parseInt(e.target.getAttribute('data-idx')));
+        return;
+      }
+      el.classList.toggle('expanded');
+    };
+    elHistoryList.appendChild(el);
+  });
+}
+
+function deleteHistoryItem(idx) {
+  var history = loadHistory();
+  if (idx >= 0 && idx < history.length) {
+    history.splice(idx, 1);
+    try { localStorage.setItem(INTERP_STORAGE_KEY, JSON.stringify(history)); } catch(e) {}
+    renderHistory();
+  }
+}
+
+elHistoryToggle.onclick = function() {
+  elHistoryToggle.classList.toggle('open');
+  elHistoryList.classList.toggle('show');
+};
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ========== MODE SWITCHING ==========
@@ -952,6 +1417,7 @@ function setMode(newMode) {
   elTabHexagram.classList.toggle('active', mode === 'hexagram');
 
   // Reset state
+  elHexagramDisplay.classList.remove('complete');
   elHexagramLines.classList.remove('complete');
   elHexagramResult.classList.remove('complete');
   hexagramLines = [];
@@ -960,11 +1426,26 @@ function setMode(newMode) {
   elHexagramResult.innerHTML = '';
   elHexagramLines.innerHTML = '';
   elProgressText.textContent = '';
-  elResultBar.style.display = 'none';
+  elResultPanel.style.display = 'none';
   elResultCoins.textContent = '';
   elResultLabel.textContent = '';
   elFlipBtn.style.display = '';
   elResetBtn.style.display = 'none';
+  llmPromptText = '';
+  hideAskSection();
+
+  // Center result panel in non-hexagram modes
+  if (mode === 'hexagram') {
+    elResultPanel.style.left = '6px';
+    elResultPanel.style.right = 'auto';
+    elResultPanel.style.width = 'calc(50% - 12px)';
+    elResultPanel.style.transform = '';
+  } else {
+    elResultPanel.style.left = '50%';
+    elResultPanel.style.right = 'auto';
+    elResultPanel.style.width = 'auto';
+    elResultPanel.style.transform = 'translateX(-50%)';
+  }
 
   if (mode === 'hexagram') {
     createCoins(3);
@@ -984,6 +1465,7 @@ elTabTriple.addEventListener('click', function() { setMode('triple'); });
 elTabHexagram.addEventListener('click', function() { setMode('hexagram'); });
 
 elResetBtn.addEventListener('click', function() {
+  elHexagramDisplay.classList.remove('complete');
   elHexagramLines.classList.remove('complete');
   elHexagramResult.classList.remove('complete');
   hexagramLines = [];
@@ -995,11 +1477,13 @@ elResetBtn.addEventListener('click', function() {
   elHexagramDisplay.classList.remove('show');
   elHexagramResult.innerHTML = '';
   elHexagramLines.innerHTML = '';
-  elResultBar.style.display = 'none';
+  elResultPanel.style.display = 'none';
   elResultCoins.textContent = '';
   elResultLabel.textContent = '';
   elFlipBtn.style.display = '';
   elResetBtn.style.display = 'none';
+  llmPromptText = '';
+  hideAskSection();
   elProgressText.textContent = '第 0 / 6 次';
   createCoins(3);
 });
@@ -1217,8 +1701,8 @@ function updateCamera() {
 
   // Target camera position: above & behind centroid,
   // pull back further when coins are spread out
-  var baseZ = 14;
-  var baseY = 24;
+  var baseZ = 18;
+  var baseY = 30;
   var tz = baseZ + spread * 2.2;
   var ty = baseY + spread * 1.2;
   var targetPos = new THREE.Vector3(cx, cy + ty, cz + tz);
