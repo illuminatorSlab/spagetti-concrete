@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Subtitle Screenshot</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1a2e;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #e0e0e0;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #16213e;
+      border-bottom: 1px solid #0f3460;
+      padding: 10px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .toolbar button {
+      padding: 8px 16px;
+      border: 1px solid #0f3460;
+      border-radius: 6px;
+      background: #0f3460;
+      color: #e0e0e0;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background .2s;
+    }
+    .toolbar button:hover { background: #1a4a8a; }
+    .toolbar button.primary {
+      background: #e94560;
+      border-color: #e94560;
+      font-weight: 600;
+    }
+    .toolbar button.primary:hover { background: #d63850; }
+    .toolbar .spacer { flex: 1; }
+    .toolbar label { font-size: 12px; color: #8899aa; }
+    .toolbar select {
+      background: #16213e; border: 1px solid #0f3460;
+      border-radius: 6px; padding: 6px 10px;
+      color: #e0e0e0; font-size: 12px; outline: none;
+    }
+    .toolbar .info { font-size: 11px; color: #667788; }
+
+    .segment-list {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .segment-card {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    .segment-card.deleted { display: none; }
+
+    .segment-card canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .segment-card .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #0d1832;
+      border-top: 1px solid #0f3460;
+    }
+    .segment-card .controls button {
+      padding: 4px 12px;
+      border: 1px solid #0f3460;
+      border-radius: 4px;
+      background: transparent;
+      color: #8899aa;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all .2s;
+    }
+    .segment-card .controls button:hover { background: #0f3460; color: #e0e0e0; }
+    .segment-card .controls button.active { background: #0f3460; color: #e0e0e0; border-color: #5577aa; }
+    .segment-card .controls button.danger { color: #c0392b; border-color: #5a2a2a; }
+    .segment-card .controls button.danger:hover { background: #3e1a1a; }
+    .segment-card .time-label {
+      margin-left: auto;
+      font-size: 11px;
+      color: #667788;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #667788;
+      font-size: 14px;
+    }
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #0f3460; color: #e0e0e0; padding: 10px 24px;
+      border-radius: 8px; font-size: 14px; z-index: 99;
+      pointer-events: none; transition: opacity .3s;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="primary" id="btnSave">Save</button>
+    <button id="btnCopy">Copy</button>
+    <span class="spacer"></span>
+    <label>Format</label>
+    <select id="outFormat">
+      <option value="jpeg">JPEG</option>
+      <option value="png">PNG</option>
+    </select>
+    <span class="info" id="infoSegments"></span>
+  </div>
+
+  <div class="segment-list" id="segmentList">
+    <div class="empty-state">Loading...</div>
+  </div>
+
+  <script src="viewer.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Video Subtitle Capture",
+  "version": "1.0.0",
+  "description": "Capture video frames with subtitles and generate vertical screenshot strips",
+  "permissions": ["activeTab", "storage", "unlimitedStorage"],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Video Subtitle Capture"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.bilibili.com/*"],
+      "js": [
+        "sites/base-adapter.js",
+        "sites/bilibili-adapter.js",
+        "sites/registry.js",
+        "lib/image-utils.js",
+        "lib/frame-differ.js",
+        "lib/capture-engine.js",
+        "lib/frame-assembler.js",
+        "content/content-script.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  }
+}
