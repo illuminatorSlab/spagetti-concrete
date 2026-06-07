@@ -228,35 +228,6 @@ body{
 }
 .interpretation-panel .btn-copy-interp:hover{color:#c0a030;border-color:#c0a030}
 
-/* History */
-.history-section{
-  margin-top:10px;
-  background:rgba(20,22,26,.45);border:1px solid rgba(255,255,255,.08);border-radius:12px;
-  overflow:hidden;transition:background .3s;width:100%;max-width:360px
-}
-.history-section.complete{background:rgba(30,30,34,.92);border-color:#333}
-.history-section .history-toggle{
-  padding:10px 14px;font-size:12px;color:#888;cursor:pointer;
-  display:flex;justify-content:space-between;align-items:center;user-select:none
-}
-.history-section .history-toggle:hover{color:#c0a030}
-.history-section .history-toggle .arrow{transition:transform .2s;font-size:10px}
-.history-section .history-toggle.open .arrow{transform:rotate(180deg)}
-.history-section .history-list{display:none;padding:0 14px 10px}
-.history-section .history-list.show{display:block}
-.history-item{
-  padding:8px 0;border-top:1px solid rgba(255,255,255,.06);cursor:pointer
-}
-.history-item .hi-time{font-size:10px;color:#555}
-.history-item .hi-question{font-size:12px;color:#aaa;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.history-item .hi-body{display:none;font-size:12px;color:#ccc;line-height:1.5;margin-top:6px;white-space:pre-wrap;word-break:break-word}
-.history-item.expanded .hi-body{display:block}
-.history-item .hi-delete{
-  float:right;font-size:10px;color:#555;padding:2px 8px;border:1px solid #333;
-  border-radius:8px;cursor:pointer;transition:all .2s
-}
-.history-item .hi-delete:hover{color:#ce2b37;border-color:#ce2b37}
-
 @media(max-width:360px){
   .tabs{padding:10px 12px 0}
   .tab{font-size:12px;padding:8px 0}
@@ -335,12 +306,6 @@ body{
         <button class="btn-copy-interp" id="copyInterpBtn">复制</button>
       </div>
       <div class="interp-body" id="interpBody"></div>
-    </div>
-    <div class="history-section hidden" id="historySection">
-      <div class="history-toggle" id="historyToggle">
-        历史解卦记录 <span class="arrow">▼</span>
-      </div>
-      <div class="history-list" id="historyList"></div>
     </div>
   </div>
 
@@ -613,11 +578,6 @@ var elInterpPanel = document.getElementById('interpPanel');
 var elInterpBody = document.getElementById('interpBody');
 var elCopyInterpBtn = document.getElementById('copyInterpBtn');
 
-// History
-var elHistorySection = document.getElementById('historySection');
-var elHistoryToggle = document.getElementById('historyToggle');
-var elHistoryList = document.getElementById('historyList');
-
 // ========== APP STATE ==========
 var mode = 'single';
 var gyroActive = false;
@@ -638,7 +598,6 @@ requestGyroPermission();
 
 // ========== LLM SETTINGS ==========
 var LLM_STORAGE_KEY = 'iching_llm_settings';
-var INTERP_STORAGE_KEY = 'iching_interpretations';
 
 function loadLlmSettings() {
   var apiSet = false, keySet = false, modelSet = false;
@@ -1177,9 +1136,8 @@ function showHexagramResult() {
 
   elResultPanel.style.display = 'none';
 
-  // Show LLM ask section and history
+  // Show LLM ask section
   showAskSection();
-  renderHistory();
 
   // Build detailed LLM prompt text with line-by-line details
   llmPromptText = '占卜结果：\n';
@@ -1223,8 +1181,6 @@ function hideAskSection() {
   elAskSection.classList.add('hidden');
   elAskSection.classList.remove('complete');
   elInterpPanel.classList.add('hidden');
-  elHistorySection.classList.add('hidden');
-  elHistorySection.classList.remove('complete');
 }
 
 elAskBtn.onclick = function() {
@@ -1263,10 +1219,6 @@ elAskBtn.onclick = function() {
 
     elInterpBody.textContent = result;
     elInterpPanel.classList.add('complete');
-
-    // Save to history
-    saveInterpretation(question, llmPromptText, result);
-    renderHistory();
   });
 };
 
@@ -1334,76 +1286,6 @@ elCopyInterpBtn.onclick = function() {
     });
   }
 };
-
-// ========== INTERPRETATION HISTORY ==========
-function loadHistory() {
-  try {
-    var raw = localStorage.getItem(INTERP_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch(e) { return []; }
-}
-
-function saveInterpretation(question, hexagramText, interpretation) {
-  var history = loadHistory();
-  history.unshift({
-    timestamp: Math.floor(Date.now() / 1000),
-    question: question,
-    hexagram_text: hexagramText,
-    interpretation: interpretation
-  });
-  if (history.length > 3) history = history.slice(0, 3);
-  try { localStorage.setItem(INTERP_STORAGE_KEY, JSON.stringify(history)); } catch(e) {}
-}
-
-function renderHistory() {
-  var history = loadHistory();
-  if (history.length === 0) {
-    elHistorySection.classList.add('hidden');
-    elHistorySection.classList.remove('complete');
-    return;
-  }
-  elHistorySection.classList.remove('hidden');
-  elHistorySection.classList.add('complete');
-  elHistoryList.innerHTML = '';
-
-  history.forEach(function(item, idx) {
-    var dateStr = new Date(item.timestamp * 1000).toLocaleString('zh-CN');
-    var el = document.createElement('div');
-    el.className = 'history-item';
-    el.innerHTML =
-      '<span class="hi-time">' + dateStr + '</span>' +
-      '<span class="hi-delete" data-idx="' + idx + '">删除</span>' +
-      '<div class="hi-question">' + escapeHtml(item.question) + '</div>' +
-      '<div class="hi-body">' + escapeHtml(item.interpretation) + '</div>';
-    el.onclick = function(e) {
-      if (e.target.classList.contains('hi-delete')) {
-        e.stopPropagation();
-        deleteHistoryItem(parseInt(e.target.getAttribute('data-idx')));
-        return;
-      }
-      el.classList.toggle('expanded');
-    };
-    elHistoryList.appendChild(el);
-  });
-}
-
-function deleteHistoryItem(idx) {
-  var history = loadHistory();
-  if (idx >= 0 && idx < history.length) {
-    history.splice(idx, 1);
-    try { localStorage.setItem(INTERP_STORAGE_KEY, JSON.stringify(history)); } catch(e) {}
-    renderHistory();
-  }
-}
-
-elHistoryToggle.onclick = function() {
-  elHistoryToggle.classList.toggle('open');
-  elHistoryList.classList.toggle('show');
-};
-
-function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 // ========== MODE SWITCHING ==========
 function setMode(newMode) {
