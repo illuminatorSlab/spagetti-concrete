@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Subtitle Capture</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Subtitle Capture</h1>
+      <span class="badge" id="siteBadge">--</span>
+    </header>
+
+    <div class="error-msg" id="errorMsg" style="display:none;"></div>
+
+    <!-- Time Range -->
+    <section class="section">
+      <label class="section-title">Time Range</label>
+      <div class="time-row">
+        <div class="time-field">
+          <label>Start</label>
+          <div class="time-input-row">
+            <input type="text" id="startTime" placeholder="0:00" value="">
+            <button class="btn-sm" id="btnGrabStart" title="Set to current playback time">&#9201;</button>
+          </div>
+        </div>
+        <span class="time-sep">&mdash;</span>
+        <div class="time-field">
+          <label>End</label>
+          <div class="time-input-row">
+            <input type="text" id="endTime" placeholder="0:10" value="">
+            <button class="btn-sm" id="btnGrabEnd" title="Set to current playback time">&#9201;</button>
+          </div>
+        </div>
+      </div>
+      <div class="current-time" id="currentTimeInfo">Current: --</div>
+    </section>
+
+    <!-- Settings -->
+    <section class="section">
+      <details class="settings-details">
+        <summary class="settings-summary">Advanced Settings</summary>
+        <div class="settings-grid">
+          <div class="setting-item">
+            <label for="frameInterval">Frame Interval (ms)</label>
+            <input type="number" id="frameInterval" value="500" min="100" max="10000" step="100">
+          </div>
+          <div class="setting-item">
+            <label for="similarityThreshold">Similarity Threshold (%)</label>
+            <input type="number" id="similarityThreshold" value="80" min="0" max="100" step="5">
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- Action -->
+    <button class="btn-generate" id="btnGenerate">Generate</button>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progressWrap" style="display:none;">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text" id="progressText">0 / 0</div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
